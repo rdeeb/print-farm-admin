@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm run docker:up:*)",
+      "Bash(where npm)",
+      "Bash(where:*)",
+      "Bash(powershell.exe -Command \"docker start 3d-farm-postgres\")",
+      "Bash(powershell.exe -Command \"netstat -ano | Select-String '':5432|:6379''\")",
+      "Bash(powershell.exe -Command \"npm run db:generate\")",
+      "Bash(powershell.exe -Command \"npm run dev\")",
+      "Bash(powershell.exe -Command \"Start-Sleep -Seconds 8; Get-Content ''C:\\\\Users\\\\rdeeb\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-rdeeb-Development-3d-farm-admin\\\\tasks\\\\b3436c1.output'' -Tail 25\")",
+      "Bash(powershell.exe -Command \"npm run db:push\")",
+      "Bash(powershell.exe -Command \"docker exec dokku-admin-postgres psql -U postgres -c \"\"GRANT ALL PRIVILEGES ON DATABASE farm_admin TO farm_user;\"\"\")",
+      "Bash(powershell.exe -Command \"npm run db:seed\")",
+      "Bash(powershell.exe -Command \"Start-Sleep -Seconds 5; Get-Content ''C:\\\\Users\\\\rdeeb\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-rdeeb-Development-3d-farm-admin\\\\tasks\\\\b0b355a.output'' -Tail 10\")",
+      "Bash(powershell.exe -Command \"npm test -- --coverage\")",
+      "Bash(powershell.exe -Command \"npm test -- --testPathIgnorePatterns=utils.test.ts\")",
+      "Bash(powershell.exe -Command \"npm test\")",
+      "Bash(powershell.exe -Command \"\\(Get-Content ''C:\\\\Users\\\\rdeeb\\\\Development\\\\3d-farm-admin\\\\src\\\\app\\\\dashboard\\\\filament\\\\page.tsx'' -Raw\\).Length\")",
+      "Bash(powershell.exe -Command \"npx tsc --noEmit 2>&1 | Select-String -Pattern ''filament'' -Context 0,5\")",
+      "Bash(npm run db:generate:*)",
+      "Bash(npm run db:push:*)",
+      "Bash(node -e:*)"
+    ]
+  }
+}

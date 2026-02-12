@@ -1,0 +1,508 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Authentication Models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Core Business Models
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logo      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  users     User[]
+  clients   Client[]
+  projects  Project[]
+  orders    Order[]
+  filaments Filament[]
+  printers  Printer[]
+  printJobs PrintJob[]
+  settings  TenantSettings?
+  hardware  Hardware[]
+
+  @@map("tenants")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String?
+  image         String?
+  role          UserRole  @default(VIEWER)
+  tenantId      String
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  accounts Account[]
+  sessions Session[]
+
+  // Created entities
+  createdProjects  Project[]  @relation("CreatedBy")
+  createdOrders    Order[]    @relation("CreatedBy")
+  createdPrintJobs PrintJob[] @relation("CreatedBy")
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+  VIEWER
+}
+
+// Shared Filament Library (global across tenants)
+model FilamentType {
+  id   String @id @default(cuid())
+  name String @unique
+  code String @unique
+
+  colors    FilamentColor[]
+  filaments Filament[]
+
+  @@map("filament_types")
+}
+
+model FilamentColor {
+  id     String @id @default(cuid())
+  name   String
+  hex    String
+  typeId String
+
+  type        FilamentType  @relation(fields: [typeId], references: [id])
+  filaments   Filament[]
+  ProjectPart ProjectPart[]
+
+  @@unique([name, typeId])
+  @@map("filament_colors")
+}
+
+// Tenant-specific Filament Definition (Brand + Type + Color)
+model Filament {
+  id        String   @id @default(cuid())
+  brand     String
+  costPerKg Float?
+  supplier  String?
+  notes     String?
+  tenantId  String
+  typeId    String
+  colorId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant    Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  type      FilamentType    @relation(fields: [typeId], references: [id])
+  color     FilamentColor   @relation(fields: [colorId], references: [id])
+  spools    FilamentSpool[]
+  OrderPart OrderPart[]
+
+  @@unique([brand, typeId, colorId, tenantId])
+  @@map("filaments")
+}
+
+// Individual Spool Inventory
+model FilamentSpool {
+  id               String    @id @default(cuid())
+  weight           Float // grams (spool size)
+  remainingWeight  Float // grams
+  remainingPercent Int // 0-100
+  purchaseDate     DateTime?
+  notes            String?
+  filamentId       String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  filament  Filament      @relation(fields: [filamentId], references: [id], onDelete: Cascade)
+  parts     ProjectPart[]
+  printJobs PrintJob[]
+
+  @@map("filament_spools")
+}
+
+// Project Management
+model Project {
+  id           String        @id @default(cuid())
+  name         String
+  description  String?
+  status       ProjectStatus @default(DRAFT)
+  assemblyTime Int? // Assembly time in minutes per unit
+  salesPrice   Float? // Selling price per unit (for cost vs earnings)
+  tenantId     String
+  createdById  String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // Relations
+  tenant    Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy User              @relation("CreatedBy", fields: [createdById], references: [id])
+  parts     ProjectPart[]
+  orders    Order[]
+  hardware  ProjectHardware[]
+
+  @@map("projects")
+}
+
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+model ProjectPart {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  filamentWeight  Float // grams per part
+  printTime       Int? // minutes per part
+  quantity        Int // number of parts needed
+  projectId       String
+  filamentColorId String?
+  spoolId         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  filamentColor FilamentColor? @relation(fields: [filamentColorId], references: [id])
+  spool         FilamentSpool? @relation(fields: [spoolId], references: [id])
+  printJobs     PrintJob[]
+  OrderPart     OrderPart[]
+
+  @@map("project_parts")
+}
+
+// Client Management
+model Client {
+  id        String       @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  source    ClientSource @default(DIRECT)
+  address   String?
+  notes     String?
+  tenantId  String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  // Relations
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@unique([email, tenantId])
+  @@map("clients")
+}
+
+// Order Management
+model Order {
+  id          String        @id @default(cuid())
+  orderNumber String        @unique
+  quantity    Int
+  status      OrderStatus   @default(PENDING)
+  priority    OrderPriority @default(MEDIUM)
+  dueDate     DateTime?
+
+  // Client Reference
+  clientId String
+
+  // Tracking
+  printedCount Int      @default(0)
+  notes        String?
+  tenantId     String
+  projectId    String
+  createdById  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client     Client      @relation(fields: [clientId], references: [id])
+  project    Project     @relation(fields: [projectId], references: [id])
+  createdBy  User        @relation("CreatedBy", fields: [createdById], references: [id])
+  printJobs  PrintJob[]
+  orderParts OrderPart[]
+
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  WAITING
+  IN_PROGRESS
+  ASSEMBLED
+  DELIVERED
+  COMPLETED
+  ON_HOLD
+  CANCELLED
+}
+
+enum OrderPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum OrderPartStatus {
+  WAITING
+  QUEUED
+  PRINTING
+  PRINTED
+}
+
+model OrderPart {
+  id         String          @id @default(cuid())
+  orderId    String
+  partId     String
+  quantity   Int
+  status     OrderPartStatus @default(WAITING)
+  filamentId String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  order    Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  part     ProjectPart @relation(fields: [partId], references: [id])
+  filament Filament?   @relation(fields: [filamentId], references: [id])
+
+  @@unique([orderId, partId])
+  @@map("order_parts")
+}
+
+enum ClientSource {
+  FACEBOOK
+  INSTAGRAM
+  DIRECT
+  WEBSITE
+  REFERRAL
+}
+
+// Shared Printer Model Library (global across tenants - for preset selection)
+model PrinterModel {
+  id                  String  @id @default(cuid())
+  brand               String
+  model               String
+  buildVolumeX        Int // mm
+  buildVolumeY        Int // mm
+  buildVolumeZ        Int // mm
+  defaultNozzle       Float   @default(0.4) // mm
+  avgPowerConsumption Float? // Watts (average during printing)
+  releaseYear         Int?
+  isActive            Boolean @default(true)
+
+  @@unique([brand, model])
+  @@map("printer_models")
+}
+
+// Printer Management (tenant-specific instances)
+model Printer {
+  id               String        @id @default(cuid())
+  name             String
+  model            String
+  brand            String?
+  status           PrinterStatus @default(IDLE)
+  buildVolume      Json? // {x, y, z} in mm
+  nozzleSize       Float? // mm
+  powerConsumption Float? // Watts (average during printing)
+  cost             Float?        // Total printer cost; operating cost per hour = cost / 13140
+  isActive         Boolean       @default(true)
+  tenantId         String
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // Relations
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  printJobs PrintJob[]
+
+  @@map("printers")
+}
+
+enum PrinterStatus {
+  IDLE
+  PRINTING
+  PAUSED
+  ERROR
+  MAINTENANCE
+  OFFLINE
+}
+
+// Print Queue Management
+model PrintJob {
+  id            String         @id @default(cuid())
+  status        PrintJobStatus @default(QUEUED)
+  priority      JobPriority    @default(MEDIUM)
+  startTime     DateTime?
+  endTime       DateTime?
+  estimatedTime Int? // minutes
+  actualTime    Int? // minutes
+  failureReason String?
+  notes         String?
+
+  // Relationships
+  tenantId    String
+  orderId     String
+  partId      String
+  printerId   String?
+  spoolId     String?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order     Order          @relation(fields: [orderId], references: [id])
+  part      ProjectPart    @relation(fields: [partId], references: [id])
+  printer   Printer?       @relation(fields: [printerId], references: [id])
+  spool     FilamentSpool? @relation(fields: [spoolId], references: [id])
+  createdBy User           @relation("CreatedBy", fields: [createdById], references: [id])
+
+  @@map("print_jobs")
+}
+
+enum PrintJobStatus {
+  QUEUED
+  PRINTING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum JobPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// System Notifications
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?
+  read      Boolean          @default(false)
+  tenantId  String?
+  userId    String?
+  createdAt DateTime         @default(now())
+
+  @@map("notifications")
+}
+
+model TenantSettings {
+  id                         String   @id @default(cuid())
+  tenantId                   String   @unique
+  printingHoursDay           Float    @default(24.0) // Total hours available for printing per day
+  printingDays               Json? // Array of days allowed for printing
+  costPerKwh                 Float    @default(0.0)
+  laborCostPerHour           Float    @default(0.0)
+  filamentMultiplier         Float    @default(1.0)
+  printerLaborCostMultiplier Float    @default(1.0)
+  hardwareMultiplier         Float    @default(1.0)
+  currency                   String   @default("USD")
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_settings")
+}
+
+enum NotificationType {
+  FILAMENT_LOW
+  FILAMENT_OUT
+  ORDER_OVERDUE
+  PRINTER_ERROR
+  JOB_COMPLETED
+  JOB_FAILED
+  SYSTEM
+}
+
+// Hardware Management
+model Hardware {
+  id           String       @id @default(cuid())
+  name         String
+  packPrice    Float // Price per pack
+  packQuantity Float // Quantity in each pack
+  packUnit     HardwareUnit // Unit of measurement
+  description  String?
+  tenantId     String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  tenant   Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projects ProjectHardware[]
+
+  @@map("hardware")
+}
+
+model ProjectHardware {
+  id         String   @id @default(cuid())
+  projectId  String
+  hardwareId String
+  quantity   Float // Amount of units needed per project
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  project  Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  hardware Hardware @relation(fields: [hardwareId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, hardwareId])
+  @@map("project_hardware")
+}
+
+enum HardwareUnit {
+  ITEMS // For screws, nuts, bolts
+  ML // Milliliters (glue, resin)
+  GRAMS // Grams (putty, filler)
+  CM // Centimeters (tape, wire)
+  UNITS // Generic units
+}

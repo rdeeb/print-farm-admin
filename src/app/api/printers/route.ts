@@ -1,0 +1,109 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { prisma } from '@/lib/prisma'
+import { authOptions } from '@/lib/auth'
+import { invalidatePrinterCostCache } from '@/lib/printer-cost-cache'
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.tenantId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const includeQueueCount = searchParams.get('includeQueueCount') === 'true'
+
+    const printers = await prisma.printer.findMany({
+      where: {
+        tenantId: session.user.tenantId,
+      },
+      include: {
+        _count: {
+          select: {
+            printJobs: true,
+          },
+        },
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    })
+
+    // If queue count requested, fetch queued jobs count per printer
+    if (includeQueueCount) {
+      const queueCounts = await prisma.printJob.groupBy({
+        by: ['printerId'],
+        where: {
+          tenantId: session.user.tenantId,
+          status: 'QUEUED',
+          printerId: { not: null },
+        },
+        _count: {
+          id: true,
+        },
+      })
+
+      const queueCountMap = new Map(
+        queueCounts.map(q => [q.printerId, q._count.id])
+      )
+
+      const printersWithQueue = printers.map(printer => ({
+        ...printer,
+        queueCount: queueCountMap.get(printer.id) ?? 0,
+      }))
+
+      return NextResponse.json(printersWithQueue)
+    }
+
+    return NextResponse.json(printers)
+  } catch (error) {
+    console.error('Error fetching printers:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.tenantId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    if (session.user.role === 'VIEWER') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const { name, model, brand, nozzleSize, buildVolume, powerConsumption, cost } = body
+
+    const printer = await prisma.printer.create({
+      data: {
+        name,
+        model,
+        brand: brand || null,
+        nozzleSize: nozzleSize || null,
+        buildVolume: buildVolume || null,
+        powerConsumption: powerConsumption || null,
+        cost: cost === '' || cost == null ? null : parseFloat(cost),
+        tenantId: session.user.tenantId,
+      },
+      include: {
+        _count: {
+          select: {
+            printJobs: true,
+          },
+        },
+      },
+    })
+
+    invalidatePrinterCostCache(session.user.tenantId)
+
+    return NextResponse.json(printer, { status: 201 })
+  } catch (error) {
+    console.error('Error creating printer:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}

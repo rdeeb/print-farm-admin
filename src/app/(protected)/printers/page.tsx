@@ -27,34 +27,7 @@ import {
 } from '@/components/ui/dialog'
 import { Plus, Printer, Power, AlertTriangle, Wrench, Pause, Play, Zap, Pencil } from 'lucide-react'
 import { PrinterLoaderIcon } from '@/components/ui/printer-loader-icon'
-
-interface PrinterData {
-  id: string
-  name: string
-  model: string
-  brand: string | null
-  status: 'IDLE' | 'PRINTING' | 'PAUSED' | 'ERROR' | 'MAINTENANCE' | 'OFFLINE'
-  buildVolume: { x: number; y: number; z: number } | null
-  nozzleSize: number | null
-  powerConsumption: number | null
-  cost: number | null
-  isActive: boolean
-  _count: {
-    printJobs: number
-  }
-}
-
-interface PrinterModel {
-  id: string
-  brand: string
-  model: string
-  buildVolumeX: number
-  buildVolumeY: number
-  buildVolumeZ: number
-  defaultNozzle: number
-  avgPowerConsumption: number | null
-  releaseYear: number | null
-}
+import type { PrinterData, PrinterModel } from '@/model/printer'
 
 const statusConfig = {
   IDLE: { label: 'Idle', variant: 'secondary' as const, icon: Power, color: 'text-green-500' },

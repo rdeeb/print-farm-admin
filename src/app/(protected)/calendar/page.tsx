@@ -13,25 +13,7 @@ import {
 } from '@/components/ui/tooltip'
 import { format } from 'date-fns'
 import { getStartOfTodayUTC, formatDateKeyUTC, dateFromUTC } from '@/lib/date-utils'
-
-interface CalendarJob {
-  id: string
-  orderNumber: string
-  projectName: string
-  status: string
-  priority: string
-  printTime: number
-  isOverdue: boolean
-}
-
-interface DayStats {
-  jobs: CalendarJob[]
-  totalMinutes: number
-  capacityMinutes: number
-  allocationPercentage: number
-  remainingMinutes: number
-  hasOverdue: boolean
-}
+import type { DayStats } from '@/model/calendar'
 
 // Start of current month in UTC for initial state
 function getInitialMonthUTC() {

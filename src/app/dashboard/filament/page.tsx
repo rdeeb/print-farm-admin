@@ -26,42 +26,7 @@ import { AlertTriangle, Package, Plus, Search, Coins } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { useSettings } from '@/components/providers/SettingsProvider'
 import { PrinterLoaderIcon } from '@/components/ui/printer-loader-icon'
-
-interface FilamentSpool {
-  id: string
-  brand: string
-  weight: number
-  remainingWeight: number
-  remainingPercent: number
-  costPerKg: number | null
-  type: {
-    id: string
-    name: string
-    code: string
-  }
-  color: {
-    id: string
-    name: string
-    hex: string
-  }
-  supplier: string | null
-  notes: string | null
-  createdAt: string
-  updatedAt: string
-}
-
-interface FilamentType {
-  id: string
-  name: string
-  code: string
-}
-
-interface FilamentColor {
-  id: string
-  name: string
-  hex: string
-  typeId: string
-}
+import type { FilamentSpool, FilamentType, FilamentColor } from '@/model/filament'
 
 export default function FilamentPage() {
   const { data: session } = useSession()
@@ -175,11 +140,11 @@ export default function FilamentPage() {
 
   const filteredSpools = spools.filter(spool => {
     const matchesSearch = !searchTerm ||
-      spool.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      spool.type.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      spool.color.name.toLowerCase().includes(searchTerm.toLowerCase())
+      (spool.brand ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (spool.type?.name ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (spool.color?.name ?? '').toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesType = !filterType || spool.type.id === filterType
+    const matchesType = !filterType || spool.type?.id === filterType
 
     const matchesStock = !filterStock ||
       (filterStock === 'low' && spool.remainingPercent < 20) ||
@@ -425,15 +390,15 @@ export default function FilamentPage() {
                     spool.remainingPercent < 20
                       ? 'destructive'
                       : spool.remainingPercent < 50
-                      ? 'warning'
-                      : 'success'
+                        ? 'warning'
+                        : 'success'
                   }
                 >
                   {spool.remainingPercent}%
                 </Badge>
               </CardTitle>
               <CardDescription>
-                {spool.type.name} • {spool.color.name}
+                {spool.type?.name ?? '—'} • {spool.color?.name ?? '—'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -441,9 +406,9 @@ export default function FilamentPage() {
                 <div className="flex items-center space-x-2">
                   <div
                     className="w-4 h-4 rounded"
-                    style={{ backgroundColor: spool.color.hex }}
+                    style={{ backgroundColor: spool.color?.hex ?? '#ccc' }}
                   />
-                  <span className="text-sm text-gray-600">{spool.color.name}</span>
+                  <span className="text-sm text-gray-600">{spool.color?.name ?? '—'}</span>
                 </div>
 
                 <div className="space-y-1">
@@ -475,13 +440,12 @@ export default function FilamentPage() {
                 <div className="space-y-1">
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
-                      className={`h-2 rounded-full ${
-                        spool.remainingPercent < 20
+                      className={`h-2 rounded-full ${spool.remainingPercent < 20
                           ? 'bg-red-500'
                           : spool.remainingPercent < 50
-                          ? 'bg-yellow-500'
-                          : 'bg-green-500'
-                      }`}
+                            ? 'bg-yellow-500'
+                            : 'bg-green-500'
+                        }`}
                       style={{ width: `${spool.remainingPercent}%` }}
                     />
                   </div>

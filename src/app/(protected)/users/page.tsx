@@ -25,15 +25,7 @@ import {
 } from '@/components/ui/dialog'
 import { Plus, Users, UserPlus, Shield, Eye, Edit3 } from 'lucide-react'
 import { PrinterLoaderIcon } from '@/components/ui/printer-loader-icon'
-
-interface User {
-  id: string
-  name: string | null
-  email: string
-  role: 'ADMIN' | 'OPERATOR' | 'VIEWER'
-  isActive: boolean
-  createdAt: string
-}
+import type { User } from '@/model/user'
 
 const roleConfig = {
   ADMIN: { label: 'Admin', variant: 'default' as const, icon: Shield },

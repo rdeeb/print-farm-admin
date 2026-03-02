@@ -26,18 +26,7 @@ import {
 import { Plus, Search, Box, Layers } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { PrinterLoaderIcon } from '@/components/ui/printer-loader-icon'
-
-interface Project {
-  id: string
-  name: string
-  description: string | null
-  status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED'
-  createdAt: string
-  _count: {
-    parts: number
-    orders: number
-  }
-}
+import type { Project } from '@/model/project'
 
 const statusConfig = {
   DRAFT: { label: 'Draft', variant: 'secondary' as const },
@@ -232,11 +221,11 @@ export default function ProjectsPage() {
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center">
                         <Layers className="h-4 w-4 mr-1" />
-                        {project._count.parts} parts
+                        {project._count?.parts ?? 0} parts
                       </div>
                       <div className="flex items-center">
                         <Box className="h-4 w-4 mr-1" />
-                        {project._count.orders} orders
+                        {project._count?.orders ?? 0} orders
                       </div>
                     </div>
                   </div>

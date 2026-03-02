@@ -1,40 +1,5 @@
 import { create } from 'zustand'
-
-interface FilamentSpool {
-  id: string
-  brand: string
-  weight: number
-  remainingWeight: number
-  remainingPercent: number
-  costPerKg: number | null
-  type: {
-    id: string
-    name: string
-    code: string
-  }
-  color: {
-    id: string
-    name: string
-    hex: string
-  }
-  supplier: string | null
-  notes: string | null
-  createdAt: string
-  updatedAt: string
-}
-
-interface FilamentType {
-  id: string
-  name: string
-  code: string
-}
-
-interface FilamentColor {
-  id: string
-  name: string
-  hex: string
-  typeId: string
-}
+import type { FilamentSpool, FilamentType, FilamentColor } from '@/model/filament'
 
 interface FilamentState {
   spools: FilamentSpool[]

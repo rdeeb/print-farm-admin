@@ -39,108 +39,17 @@ import { ArrowLeft, Plus, Pencil, Trash2, Layers, Clock, Package, Save, DollarSi
 import { formatDuration, formatCurrency } from '@/lib/utils'
 import { useSettings } from '@/components/providers/SettingsProvider'
 import { PrinterLoaderIcon } from '@/components/ui/printer-loader-icon'
-
-type HardwareUnit = 'ITEMS' | 'ML' | 'GRAMS' | 'CM' | 'UNITS'
-
-interface ProjectPart {
-  id: string
-  name: string
-  description: string | null
-  filamentWeight: number
-  printTime: number | null
-  quantity: number
-  filamentColor: {
-    id: string
-    name: string
-    hex: string
-    type: {
-      id: string
-      name: string
-      code: string
-    }
-  } | null
-  spool: {
-    id: string
-    filament: {
-      brand: string
-      color: {
-        id: string
-        name: string
-        hex: string
-      }
-      type: {
-        id: string
-        name: string
-        code: string
-      }
-    }
-  } | null
-}
-
-interface ProjectHardware {
-  id: string
-  quantity: number
-  hardware: {
-    id: string
-    name: string
-    packPrice: number
-    packQuantity: number
-    packUnit: HardwareUnit
-  }
-}
-
-interface Hardware {
-  id: string
-  name: string
-  packPrice: number
-  packQuantity: number
-  packUnit: HardwareUnit
-}
-
-interface Project {
-  id: string
-  name: string
-  description: string | null
-  status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED'
-  assemblyTime: number | null
-  salesPrice: number | null
-  parts: ProjectPart[]
-  hardware: ProjectHardware[]
-  _count: {
-    orders: number
-  }
-  createdAt: string
-}
-
-interface CostBreakdown {
-  filamentCost: number
-  laborCost: number
-  energyCost: number
-  hardwareCost: number
-  printerOperatingCost: number
-  totalCost: number
-}
-
-interface Filament {
-  id: string
-  brand: string
-  totalRemainingWeight: number
-  type: { id: string; name: string; code: string }
-  color: { id: string; name: string; hex: string }
-}
-
-interface FilamentType {
-  id: string
-  name: string
-  code: string
-}
-
-interface FilamentColor {
-  id: string
-  name: string
-  hex: string
-  typeId: string
-}
+import type {
+  Project,
+  ProjectPart,
+  ProjectHardware,
+  CostBreakdown,
+  ProjectFilament,
+  FilamentType,
+  FilamentColor,
+  HardwareUnit,
+} from '@/model/project'
+import type { Hardware } from '@/model/hardware'
 
 const statusConfig = {
   DRAFT: { label: 'Draft', variant: 'secondary' as const },
@@ -165,7 +74,7 @@ export default function ProjectDetailPage() {
 
   const { settings } = useSettings()
   const [project, setProject] = useState<Project | null>(null)
-  const [filaments, setFilaments] = useState<Filament[]>([])
+  const [filaments, setFilaments] = useState<ProjectFilament[]>([])
   const [types, setTypes] = useState<FilamentType[]>([])
   const [colors, setColors] = useState<FilamentColor[]>([])
   const [filteredColors, setFilteredColors] = useState<FilamentColor[]>([])
@@ -292,7 +201,7 @@ export default function ProjectDetailPage() {
 
       if (response.ok) {
         const updated = await response.json()
-        setProject({ ...project!, ...updated, hardware: project!.hardware })
+        setProject({ ...project!, ...updated, hardware: project?.hardware ?? [] })
         setIsEditing(false)
         refreshCost()
       }
@@ -323,7 +232,7 @@ export default function ProjectDetailPage() {
         const newPart = await response.json()
         setProject({
           ...project!,
-          parts: [...project!.parts, newPart],
+          parts: [...(project?.parts ?? []), newPart],
         })
         setIsPartDialogOpen(false)
         resetPartForm()
@@ -356,7 +265,7 @@ export default function ProjectDetailPage() {
         const updatedPart = await response.json()
         setProject({
           ...project!,
-          parts: project!.parts.map(p => p.id === editingPart.id ? updatedPart : p),
+          parts: (project?.parts ?? []).map(p => p.id === editingPart.id ? updatedPart : p),
         })
         setEditingPart(null)
         setIsPartDialogOpen(false)
@@ -377,7 +286,7 @@ export default function ProjectDetailPage() {
       if (response.ok) {
         setProject({
           ...project!,
-          parts: project!.parts.filter(p => p.id !== partId),
+          parts: (project?.parts ?? []).filter(p => p.id !== partId),
         })
         refreshCost()
       }
@@ -400,18 +309,18 @@ export default function ProjectDetailPage() {
 
       if (response.ok) {
         const newHardware = await response.json()
-        const existingIndex = project!.hardware.findIndex(h => h.hardware.id === newHardware.hardware.id)
+        const existingIndex = (project?.hardware ?? []).findIndex(h => h.hardware.id === newHardware.hardware.id)
         if (existingIndex >= 0) {
           // Update existing
           setProject({
             ...project!,
-            hardware: project!.hardware.map((h, i) => i === existingIndex ? newHardware : h),
+            hardware: (project?.hardware ?? []).map((h, i) => i === existingIndex ? newHardware : h),
           })
         } else {
           // Add new
           setProject({
             ...project!,
-            hardware: [...project!.hardware, newHardware],
+            hardware: [...(project?.hardware ?? []), newHardware],
           })
         }
         setIsHardwareDialogOpen(false)
@@ -440,7 +349,7 @@ export default function ProjectDetailPage() {
         const updated = await response.json()
         setProject({
           ...project!,
-          hardware: project!.hardware.map(h => h.id === editingHardware.id ? updated : h),
+          hardware: (project?.hardware ?? []).map(h => h.id === editingHardware.id ? updated : h),
         })
         setEditingHardware(null)
         setIsHardwareDialogOpen(false)
@@ -461,7 +370,7 @@ export default function ProjectDetailPage() {
       if (response.ok) {
         setProject({
           ...project!,
-          hardware: project!.hardware.filter(h => h.hardware.id !== hardwareId),
+          hardware: (project?.hardware ?? []).filter(h => h.hardware.id !== hardwareId),
         })
         refreshCost()
       }
@@ -547,12 +456,12 @@ export default function ProjectDetailPage() {
       .sort((a, b) => b.printableCount - a.printableCount)
   }
 
-  const totalFilament = project?.parts.reduce((sum, part) => sum + (part.filamentWeight * part.quantity), 0) || 0
-  const totalPrintTime = project?.parts.reduce((sum, part) => sum + ((part.printTime || 0) * part.quantity), 0) || 0
-  const totalParts = project?.parts.reduce((sum, part) => sum + part.quantity, 0) || 0
+  const totalFilament = (project?.parts ?? []).reduce((sum, part) => sum + (part.filamentWeight * part.quantity), 0) || 0
+  const totalPrintTime = (project?.parts ?? []).reduce((sum, part) => sum + ((part.printTime || 0) * part.quantity), 0) || 0
+  const totalParts = (project?.parts ?? []).reduce((sum, part) => sum + part.quantity, 0) || 0
 
   // Get available hardware not yet in project
-  const availableHardware = hardware.filter(h => !project?.hardware.some(ph => ph.hardware.id === h.id))
+  const availableHardware = hardware.filter(h => !(project?.hardware ?? []).some(ph => ph.hardware.id === h.id))
 
   if (isLoading) {
     return (
@@ -593,7 +502,7 @@ export default function ProjectDetailPage() {
             <div className="flex items-center space-x-2 mt-1">
               <Badge variant={status.variant}>{status.label}</Badge>
               <span className="text-sm text-gray-500">
-                {project._count.orders} order{project._count.orders !== 1 ? 's' : ''}
+                {project._count?.orders ?? 0} order{(project._count?.orders ?? 0) !== 1 ? 's' : ''}
               </span>
             </div>
           </div>
@@ -939,9 +848,9 @@ export default function ProjectDetailPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {project.parts.length > 0 ? (
+          {(project.parts ?? []).length > 0 ? (
             <div className="space-y-4">
-              {project.parts.map((part) => {
+              {(project.parts ?? []).map((part) => {
                 const requirement = getPartRequirement(part)
                 const projections = getPartProjections(part)
 
@@ -1141,9 +1050,9 @@ export default function ProjectDetailPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {project.hardware.length > 0 ? (
+          {(project.hardware ?? []).length > 0 ? (
             <div className="space-y-3">
-              {project.hardware.map((ph) => {
+              {(project.hardware ?? []).map((ph) => {
                 const unitCost = ph.hardware.packPrice / ph.hardware.packQuantity
                 const totalCost = unitCost * ph.quantity
 

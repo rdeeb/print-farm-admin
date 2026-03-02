@@ -5,48 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Package, AlertTriangle, TrendingDown, TrendingUp, Printer, Wrench, CheckCircle, Clock, XCircle } from 'lucide-react'
 import { PrinterLoaderIcon } from '@/components/ui/printer-loader-icon'
-
-interface PrinterInfo {
-  id: string
-  name: string
-  model: string
-  brand: string | null
-  status: 'IDLE' | 'PRINTING' | 'PAUSED' | 'ERROR' | 'MAINTENANCE' | 'OFFLINE'
-  isActive: boolean
-}
-
-interface HardwareItem {
-  id: string
-  name: string
-  packPrice: number
-  packQuantity: number
-  packUnit: string
-  description: string | null
-}
-
-interface InventorySummary {
-  totalSpools: number
-  totalWeight: number
-  lowStockCount: number
-  typeBreakdown: Array<{
-    type: string
-    count: number
-    totalWeight: number
-  }>
-  printers: {
-    total: number
-    active: number
-    idle: number
-    printing: number
-    maintenance: number
-    offline: number
-    printers: PrinterInfo[]
-  }
-  hardware: {
-    total: number
-    items: HardwareItem[]
-  }
-}
+import type { InventorySummary } from '@/model/inventory'
 
 const printerStatusConfig = {
   IDLE: { label: 'Idle', variant: 'success' as const, icon: CheckCircle },

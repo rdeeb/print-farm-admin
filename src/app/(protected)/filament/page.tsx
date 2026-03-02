@@ -48,41 +48,7 @@ const POPULAR_BRANDS = [
   'PRILINE', 'Bambu Lab', 'Anycubic', 'Elegoo',
 ]
 
-interface FilamentSpool {
-  id: string
-  weight: number
-  remainingWeight: number
-  remainingPercent: number
-  purchaseDate: string | null
-  notes: string | null
-}
-
-interface Filament {
-  id: string
-  brand: string
-  costPerKg: number | null
-  supplier: string | null
-  notes: string | null
-  type: { id: string; name: string; code: string }
-  color: { id: string; name: string; hex: string }
-  spools: FilamentSpool[]
-  _count: { spools: number }
-  totalWeight: number
-  totalRemainingWeight: number
-}
-
-interface FilamentType {
-  id: string
-  name: string
-  code: string
-}
-
-interface FilamentColor {
-  id: string
-  name: string
-  hex: string
-  typeId: string
-}
+import type { Filament, FilamentSpool, FilamentType, FilamentColor } from '@/model/filament'
 
 export default function FilamentPage() {
   const { data: session } = useSession()
@@ -323,17 +289,17 @@ export default function FilamentPage() {
 
     const matchesType = !filterType || filament.type.id === filterType
 
-    const isLowStock = filament.spools.some(s => s.remainingPercent < 20) || filament._count.spools === 0
+    const isLowStock = (filament.spools ?? []).some(s => s.remainingPercent < 20) || (filament._count?.spools ?? 0) === 0
     const matchesLowStock = !lowStockOnly || isLowStock
 
     return matchesSearch && matchesType && matchesLowStock
   })
 
   // Summary stats
-  const totalSpools = filaments.reduce((sum, f) => sum + f._count.spools, 0)
-  const totalRemainingWeight = filaments.reduce((sum, f) => sum + f.totalRemainingWeight, 0)
+  const totalSpools = filaments.reduce((sum, f) => sum + (f._count?.spools ?? 0), 0)
+  const totalRemainingWeight = filaments.reduce((sum, f) => sum + (f.totalRemainingWeight ?? 0), 0)
   const lowStockFilaments = filaments.filter(f =>
-    f.spools.some(s => s.remainingPercent < 20) || f._count.spools === 0
+    (f.spools ?? []).some(s => s.remainingPercent < 20) || (f._count?.spools ?? 0) === 0
   ).length
 
   const canEdit = session?.user?.role !== 'VIEWER'
@@ -515,10 +481,11 @@ export default function FilamentPage() {
       <div className="space-y-4">
         {filteredFilaments.map((filament) => {
           const isExpanded = expandedFilaments.has(filament.id)
-          const avgPercent = filament.spools.length > 0
-            ? Math.round(filament.spools.reduce((sum, s) => sum + s.remainingPercent, 0) / filament.spools.length)
+          const filamentSpools = filament.spools ?? []
+          const avgPercent = filamentSpools.length > 0
+            ? Math.round(filamentSpools.reduce((sum, s) => sum + s.remainingPercent, 0) / filamentSpools.length)
             : 0
-          const hasLowStock = filament.spools.some(s => s.remainingPercent < 20)
+          const hasLowStock = filamentSpools.some(s => s.remainingPercent < 20)
 
           return (
             <Card key={filament.id} className={hasLowStock ? 'border-yellow-300' : ''}>
@@ -532,8 +499,8 @@ export default function FilamentPage() {
                         {hasLowStock && <AlertTriangle className="h-4 w-4 text-yellow-500 ml-2" />}
                       </CardTitle>
                       <CardDescription>
-                        {filament._count.spools} spool{filament._count.spools !== 1 ? 's' : ''} •{' '}
-                        {(filament.totalRemainingWeight / 1000).toFixed(2)}kg remaining
+                        {filament._count?.spools ?? 0} spool{(filament._count?.spools ?? 0) !== 1 ? 's' : ''} •{' '}
+                        {((filament.totalRemainingWeight ?? 0) / 1000).toFixed(2)}kg remaining
                         {filament.costPerKg && ` • ${formatCurrency(filament.costPerKg, settings.currency)}/kg`}
                       </CardDescription>
                     </div>
@@ -555,7 +522,7 @@ export default function FilamentPage() {
                     <Button variant="ghost" size="sm" onClick={() => toggleExpanded(filament.id)}>
                       {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </Button>
-                    {canEdit && filament._count.spools === 0 && (
+                    {canEdit && (filament._count?.spools ?? 0) === 0 && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="sm" className="text-red-600">
@@ -582,9 +549,9 @@ export default function FilamentPage() {
 
               {isExpanded && (
                 <CardContent>
-                  {filament.spools.length > 0 ? (
+                  {(filament.spools ?? []).length > 0 ? (
                     <div className="space-y-2">
-                      {filament.spools.map((spool, index) => (
+                      {(filament.spools ?? []).map((spool, index) => (
                         <div key={spool.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                           <div className="flex items-center space-x-4">
                             <span className="text-sm text-gray-500">#{index + 1}</span>

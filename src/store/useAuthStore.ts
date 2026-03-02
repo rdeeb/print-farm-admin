@@ -1,18 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { User } from '@/model/user'
 
-export interface User {
-  id: string
-  name: string | null
-  email: string
-  role: 'ADMIN' | 'OPERATOR' | 'VIEWER'
-  tenantId: string
-  tenant: {
-    id: string
-    name: string
-    slug: string
-  }
-}
+export type { User }
 
 interface AuthState {
   user: User | null

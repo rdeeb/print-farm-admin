@@ -37,20 +37,7 @@ import { Plus, Search, Pencil, Trash2, Wrench, Coins } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { useSettings } from '@/components/providers/SettingsProvider'
 import { PrinterLoaderIcon } from '@/components/ui/printer-loader-icon'
-
-type HardwareUnit = 'ITEMS' | 'ML' | 'GRAMS' | 'CM' | 'UNITS'
-
-interface Hardware {
-  id: string
-  name: string
-  packPrice: number
-  packQuantity: number
-  packUnit: HardwareUnit
-  description: string | null
-  _count: {
-    projects: number
-  }
-}
+import type { Hardware, HardwareUnit } from '@/model/hardware'
 
 const UNIT_LABELS: Record<HardwareUnit, string> = {
   ITEMS: 'items',
@@ -330,7 +317,7 @@ export default function HardwarePage() {
         <Card>
           <CardContent className="pt-4">
             <p className="text-2xl font-bold">
-              {hardware.reduce((sum, h) => sum + h._count.projects, 0)}
+              {hardware.reduce((sum, h) => sum + (h._count?.projects ?? 0), 0)}
             </p>
             <p className="text-sm text-gray-500">Used in Projects</p>
           </CardContent>
@@ -391,7 +378,7 @@ export default function HardwarePage() {
                             variant="ghost"
                             size="sm"
                             className="text-red-600 hover:text-red-700"
-                            disabled={item._count.projects > 0}
+                            disabled={(item._count?.projects ?? 0) > 0}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -430,7 +417,7 @@ export default function HardwarePage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Used in:</span>
-                    <span className="font-medium">{item._count.projects} project{item._count.projects !== 1 ? 's' : ''}</span>
+                    <span className="font-medium">{item._count?.projects ?? 0} project{(item._count?.projects ?? 0) !== 1 ? 's' : ''}</span>
                   </div>
                   {item.description && (
                     <p className="text-gray-500 text-xs pt-2 border-t">{item.description}</p>

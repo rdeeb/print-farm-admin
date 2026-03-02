@@ -17,38 +17,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { PrinterLoaderIcon } from '@/components/ui/printer-loader-icon'
-
-interface DashboardStats {
-  // Action items
-  ordersDueToday: number
-  ordersNeedingAction: number
-  printingPrinters: number
-  totalPrinters: number
-  failedJobsWeek: number
-  queuedJobs: number
-  overdueOrders: number
-  lowStockSpools: number
-
-  // Financial
-  revenueThisWeek: number
-  revenueThisMonth: number
-  profitThisWeek: number
-  profitThisMonth: number
-  outstandingValue: number
-  avgOrderValue: number
-  estimatedLossFromFails: number
-  ordersCompletedThisWeek: number
-  ordersCompletedThisMonth: number
-
-  // Work stats
-  pendingOrders: number
-  completedJobsWeek: number
-  successRate: number
-
-  // Breakdowns
-  ordersBreakdown: Record<string, number>
-  printersBreakdown: Record<string, number>
-}
+import type { DashboardStats } from '@/model/dashboard'
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
@@ -475,21 +444,21 @@ export default function DashboardPage() {
           ============================================ */}
       {smartInsight && (
         <Card className={`${smartInsight.type === 'warning' ? 'border-amber-200 bg-amber-50' :
-            smartInsight.type === 'action' ? 'border-blue-200 bg-blue-50' :
-              smartInsight.type === 'success' ? 'border-green-200 bg-green-50' :
-                'border-gray-200 bg-gray-50'
+          smartInsight.type === 'action' ? 'border-blue-200 bg-blue-50' :
+            smartInsight.type === 'success' ? 'border-green-200 bg-green-50' :
+              'border-gray-200 bg-gray-50'
           }`}>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <TrendingUp className={`h-5 w-5 ${smartInsight.type === 'warning' ? 'text-amber-600' :
-                  smartInsight.type === 'action' ? 'text-blue-600' :
-                    smartInsight.type === 'success' ? 'text-green-600' :
-                      'text-gray-600'
+                smartInsight.type === 'action' ? 'text-blue-600' :
+                  smartInsight.type === 'success' ? 'text-green-600' :
+                    'text-gray-600'
                 }`} />
               <p className={`text-sm font-medium ${smartInsight.type === 'warning' ? 'text-amber-800' :
-                  smartInsight.type === 'action' ? 'text-blue-800' :
-                    smartInsight.type === 'success' ? 'text-green-800' :
-                      'text-gray-800'
+                smartInsight.type === 'action' ? 'text-blue-800' :
+                  smartInsight.type === 'success' ? 'text-green-800' :
+                    'text-gray-800'
                 }`}>
                 {smartInsight.text}
               </p>

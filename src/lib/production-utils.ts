@@ -6,46 +6,13 @@ import {
   setMaxOperatingCostPerHour,
   OPERATING_HOURS_DIVISOR,
 } from './printer-cost-cache'
+import type {
+  ProjectCostBreakdown,
+  ProjectForCostCalculation,
+  TenantSettingsForCost,
+} from '@/model/project'
 
-export interface ProjectCostBreakdown {
-  filamentCost: number
-  laborCost: number
-  energyCost: number
-  hardwareCost: number
-  printerOperatingCost: number
-  totalCost: number
-}
-
-export interface ProjectForCostCalculation {
-  parts: {
-    filamentWeight: number
-    quantity: number
-    printTime: number | null
-    filamentColorId?: string | null
-    spool?: {
-      filament?: {
-        costPerKg?: number | null
-        colorId?: string
-      } | null
-    } | null
-  }[]
-  hardware: {
-    quantity: number
-    hardware: {
-      packPrice: number
-      packQuantity: number
-    }
-  }[]
-  assemblyTime: number | null
-}
-
-export interface TenantSettingsForCost {
-  costPerKwh: number
-  laborCostPerHour: number
-  filamentMultiplier: number
-  printerLaborCostMultiplier: number
-  hardwareMultiplier: number
-}
+export type { ProjectCostBreakdown, ProjectForCostCalculation, TenantSettingsForCost }
 
 /**
  * Calculates the landed cost for a project (per completed item/unit).

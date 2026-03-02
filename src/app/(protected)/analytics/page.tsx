@@ -4,17 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart3, TrendingUp, Clock, CheckCircle, Package, Printer } from 'lucide-react'
 import { PrinterLoaderIcon } from '@/components/ui/printer-loader-icon'
-
-interface AnalyticsData {
-  totalOrders: number
-  completedOrders: number
-  totalPrintJobs: number
-  completedJobs: number
-  failedJobs: number
-  averagePrintTime: number
-  filamentUsed: number
-  printerUtilization: number
-}
+import type { AnalyticsData } from '@/model/analytics'
 
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)

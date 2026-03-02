@@ -2,17 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-
-interface TenantSettings {
-  currency: string
-  // Add other settings as needed
-}
-
-interface SettingsContextType {
-  settings: TenantSettings
-  loading: boolean
-  refreshSettings: () => Promise<void>
-}
+import type { TenantSettings, SettingsContextType } from '@/model/settings'
 
 const defaultSettings: TenantSettings = {
   currency: 'USD',
@@ -21,7 +11,7 @@ const defaultSettings: TenantSettings = {
 const SettingsContext = createContext<SettingsContextType>({
   settings: defaultSettings,
   loading: true,
-  refreshSettings: async () => {},
+  refreshSettings: async () => { },
 })
 
 export const useSettings = () => useContext(SettingsContext)

@@ -19,13 +19,7 @@ import {
   UserCircle,
   Wrench,
 } from 'lucide-react'
-
-interface NavigationItem {
-  name: string
-  href: string
-  icon: React.ComponentType<{ className?: string }>
-  roles?: string[]
-}
+import type { NavigationItem } from '@/model/navigation'
 
 const navigation: NavigationItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },

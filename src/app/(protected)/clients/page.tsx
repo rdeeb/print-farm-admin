@@ -36,20 +36,7 @@ import {
 import { Plus, Search, User, Pencil, Trash2, Mail, Phone, FileText } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { PrinterLoaderIcon } from '@/components/ui/printer-loader-icon'
-
-interface Client {
-  id: string
-  name: string
-  phone: string | null
-  email: string | null
-  source: string
-  address: string | null
-  notes: string | null
-  createdAt: string
-  _count: {
-    orders: number
-  }
-}
+import type { Client } from '@/model/client'
 
 const sourceConfig: Record<string, { label: string; className: string }> = {
   DIRECT: { label: 'Direct', className: 'bg-gray-100 text-gray-800' },
@@ -374,7 +361,7 @@ export default function ClientsPage() {
                       <Button variant="ghost" size="icon" onClick={() => openEditDialog(client)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      {canDelete && client._count.orders === 0 && (
+                      {canDelete && (client._count?.orders ?? 0) === 0 && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700">
@@ -420,11 +407,11 @@ export default function ClientsPage() {
                   )}
                   <div className="flex items-center text-gray-600">
                     <FileText className="h-4 w-4 mr-2" />
-                    {client._count.orders} order{client._count.orders !== 1 ? 's' : ''}
+                    {client._count?.orders ?? 0} order{(client._count?.orders ?? 0) !== 1 ? 's' : ''}
                   </div>
                 </div>
                 <p className="text-xs text-gray-400 mt-3">
-                  Added {formatDate(client.createdAt)}
+                  Added {client.createdAt ? formatDate(client.createdAt) : '—'}
                 </p>
               </CardContent>
             </Card>

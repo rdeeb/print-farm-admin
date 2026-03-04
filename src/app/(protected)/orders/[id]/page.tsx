@@ -4,10 +4,10 @@ import { useParams } from 'next/navigation'
 import { PrinterLoaderIcon } from '@/components/ui/printer-loader-icon'
 import { statusConfig, fallbackOrderStatus } from '../constants'
 import { useOrderDetail } from '../hooks/useOrderDetail'
-import { OrderDetailHeader } from '../components/OrderDetailHeader'
-import { OrderInfoCard } from '../components/OrderInfoCard'
-import { OrderPartsCard } from '../components/OrderPartsCard'
-import { PrintSelectionDialog } from '../components/PrintSelectionDialog'
+import { OrderDetailHeader } from '../components/detail/OrderDetailHeader'
+import { OrderInfoCard } from '../components/detail/OrderInfoCard'
+import { OrderPartsCard } from '../components/detail/OrderPartsCard'
+import { PrintSelectionDialog } from '../components/detail/PrintSelectionDialog'
 
 export default function OrderDetailPage() {
   const params = useParams()

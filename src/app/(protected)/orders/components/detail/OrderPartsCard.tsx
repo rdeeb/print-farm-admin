@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Clock, Package, Pencil, Printer as PrinterIcon, Save } from 'lucide-react'
-import { partStatusConfig, fallbackPartStatus } from '../constants'
+import { partStatusConfig, fallbackPartStatus } from '../../constants'
 import type { Order, OrderPart } from '@/model/order'
 import type { Printer } from '@/model/printer'
 

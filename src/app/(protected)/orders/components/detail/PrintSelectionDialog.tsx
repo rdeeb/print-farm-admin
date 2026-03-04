@@ -19,7 +19,7 @@ import {
 import { Printer as PrinterIcon } from 'lucide-react'
 import type { OrderPart } from '@/model/order'
 import type { Printer } from '@/model/printer'
-import type { SelectedOption } from '../hooks/useOrderDetail'
+import type { SelectedOption } from '../../hooks/useOrderDetail'
 
 interface PrintSelectionDialogProps {
   open: boolean

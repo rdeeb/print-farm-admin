@@ -14,6 +14,13 @@ import type {
 
 export type { ProjectCostBreakdown, ProjectForCostCalculation, TenantSettingsForCost }
 
+export type SoftExpenseAllocations = {
+  labor: number
+  energy: number
+  printer: number
+  total: number
+}
+
 /**
  * Calculates the landed cost for a project (per completed item/unit).
  * Includes filament, labor, energy, hardware, and printer operating costs.
@@ -22,15 +29,24 @@ export function calculateProjectLandedCost(
   project: ProjectForCostCalculation,
   settings: TenantSettingsForCost,
   maxPrinterPowerConsumption: number | null,
-  maxFilamentCostPerKgByColorId: Record<string, number>,
+  maxMaterialCostPerUnitByColorId: Record<string, number>,
   maxPrinterOperatingCostPerHour: number
 ): ProjectCostBreakdown {
   // 1. Filament Cost
   const filamentCost = project.parts.reduce((sum, part) => {
-    const weightKg = (part.filamentWeight * part.quantity) / 1000
+    const materialUsage = part.materialUsagePerUnit ?? part.filamentWeight
+    const totalUsage = materialUsage * part.quantity
+    const spoolUnitCost =
+      part.spool?.landedCostTotal &&
+      part.spool?.capacity &&
+      part.spool.capacity > 0
+        ? part.spool.landedCostTotal / part.spool.capacity
+        : null
     const colorId = part.filamentColorId || part.spool?.filament?.colorId
-    const costPerKg = (colorId ? maxFilamentCostPerKgByColorId[colorId] : undefined) || 0
-    return sum + (weightKg * costPerKg)
+    const fallbackCostPerUnit =
+      (colorId ? maxMaterialCostPerUnitByColorId[colorId] : undefined) || 0
+    const costPerUnit = spoolUnitCost ?? fallbackCostPerUnit
+    return sum + (totalUsage * costPerUnit)
   }, 0) * settings.filamentMultiplier
 
   // 2. Labor Cost (assembly time only)
@@ -63,6 +79,18 @@ export function calculateProjectLandedCost(
     hardwareCost,
     printerOperatingCost,
     totalCost: filamentCost + laborCost + energyCost + hardwareCost + printerOperatingCost,
+  }
+}
+
+export function getSoftExpenseAllocations(
+  cost: ProjectCostBreakdown
+): SoftExpenseAllocations {
+  const total = cost.laborCost + cost.energyCost + cost.printerOperatingCost
+  return {
+    labor: cost.laborCost,
+    energy: cost.energyCost,
+    printer: cost.printerOperatingCost,
+    total,
   }
 }
 
@@ -114,6 +142,7 @@ export async function calculateProjectLandedCostById(
       select: {
         colorId: true,
         costPerKg: true,
+        baseLandedCostPerUnit: true,
       },
     }),
   ])
@@ -134,11 +163,13 @@ export async function calculateProjectLandedCostById(
     setMaxOperatingCostPerHour(tenantId, maxOperatingCostPerHour)
   }
 
-  const maxFilamentCostPerKgByColorId = filaments.reduce<Record<string, number>>(
+  const maxMaterialCostPerUnitByColorId = filaments.reduce<Record<string, number>>(
     (acc, filament) => {
-      const costPerKg = filament.costPerKg || 0
-      if (!acc[filament.colorId] || costPerKg > acc[filament.colorId]) {
-        acc[filament.colorId] = costPerKg
+      const costPerUnit =
+        filament.baseLandedCostPerUnit ??
+        (filament.costPerKg != null ? filament.costPerKg / 1000 : 0)
+      if (!acc[filament.colorId] || costPerUnit > acc[filament.colorId]) {
+        acc[filament.colorId] = costPerUnit
       }
       return acc
     },
@@ -155,7 +186,7 @@ export async function calculateProjectLandedCostById(
       hardwareMultiplier: settings.hardwareMultiplier,
     },
     maxPower || null,
-    maxFilamentCostPerKgByColorId,
+    maxMaterialCostPerUnitByColorId,
     maxOperatingCostPerHour
   )
 }

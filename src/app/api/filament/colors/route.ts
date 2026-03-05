@@ -13,8 +13,18 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const typeId = searchParams.get('typeId')
+    const technology = searchParams.get('technology')
 
-    const where = typeId ? { typeId } : {}
+    const where = {
+      ...(typeId ? { typeId } : {}),
+      ...(technology
+        ? {
+            type: {
+              technology: technology as 'FDM' | 'SLA' | 'SLS',
+            },
+          }
+        : {}),
+    }
 
     const colors = await prisma.filamentColor.findMany({
       where,

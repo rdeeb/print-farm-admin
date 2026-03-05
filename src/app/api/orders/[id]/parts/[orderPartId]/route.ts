@@ -140,8 +140,12 @@ export async function PATCH(
         return NextResponse.json({ error: 'Filament not available for this part' }, { status: 400 })
       }
 
-      const requiredWeight = orderPart.part.filamentWeight * orderPart.quantity
-      const totalRemainingWeight = filament.spools.reduce((sum, spool) => sum + spool.remainingWeight, 0)
+      const requiredWeight =
+        (orderPart.part.materialUsagePerUnit ?? orderPart.part.filamentWeight) * orderPart.quantity
+      const totalRemainingWeight = filament.spools.reduce(
+        (sum, spool) => sum + (spool.remainingQuantity ?? spool.remainingWeight),
+        0
+      )
 
       if (totalRemainingWeight < requiredWeight) {
         return NextResponse.json(
@@ -150,7 +154,10 @@ export async function PATCH(
         )
       }
 
-      const spoolToUse = filament.spools.find(s => s.remainingWeight >= requiredWeight) || filament.spools[0]
+      const spoolToUse =
+        filament.spools.find(
+          (s) => (s.remainingQuantity ?? s.remainingWeight) >= requiredWeight
+        ) || filament.spools[0]
 
       const updated = await prisma.$transaction(async tx => {
         // Update order part status to QUEUED
@@ -263,8 +270,12 @@ export async function PATCH(
         return NextResponse.json({ error: 'Filament not available for this part' }, { status: 400 })
       }
 
-      const requiredWeight = orderPart.part.filamentWeight * orderPart.quantity
-      const totalRemainingWeight = filament.spools.reduce((sum, spool) => sum + spool.remainingWeight, 0)
+      const requiredWeight =
+        (orderPart.part.materialUsagePerUnit ?? orderPart.part.filamentWeight) * orderPart.quantity
+      const totalRemainingWeight = filament.spools.reduce(
+        (sum, spool) => sum + (spool.remainingQuantity ?? spool.remainingWeight),
+        0
+      )
 
       if (totalRemainingWeight < requiredWeight) {
         return NextResponse.json(
@@ -274,7 +285,10 @@ export async function PATCH(
       }
 
       // Find the best spool to use (one with most remaining that can cover the job)
-      const spoolToUse = filament.spools.find(s => s.remainingWeight >= requiredWeight) || filament.spools[0]
+      const spoolToUse =
+        filament.spools.find(
+          (s) => (s.remainingQuantity ?? s.remainingWeight) >= requiredWeight
+        ) || filament.spools[0]
 
       const updated = await prisma.$transaction(async tx => {
         // Check if there's an existing QUEUED print job for this part
@@ -392,8 +406,13 @@ export async function PATCH(
           throw new Error('Selected filament not found')
         }
 
-        const requiredWeight = orderPart.part.filamentWeight * orderPart.quantity
-        const totalRemainingWeight = filament.spools.reduce((sum, spool) => sum + spool.remainingWeight, 0)
+        const requiredWeight =
+          (orderPart.part.materialUsagePerUnit ?? orderPart.part.filamentWeight) *
+          orderPart.quantity
+        const totalRemainingWeight = filament.spools.reduce(
+          (sum, spool) => sum + (spool.remainingQuantity ?? spool.remainingWeight),
+          0
+        )
 
         if (totalRemainingWeight < requiredWeight) {
           throw new Error('Not enough filament remaining for this part')
@@ -404,16 +423,19 @@ export async function PATCH(
 
         for (const spool of filament.spools) {
           if (remainingToUse <= 0) break
-          const newRemaining = Math.max(0, spool.remainingWeight - remainingToUse)
-          const used = spool.remainingWeight - newRemaining
+          const currentRemaining = spool.remainingQuantity ?? spool.remainingWeight
+          const currentCapacity = spool.capacity ?? spool.weight
+          const newRemaining = Math.max(0, currentRemaining - remainingToUse)
+          const used = currentRemaining - newRemaining
           remainingToUse -= used
 
-          const newPercent = Math.max(0, Math.round((newRemaining / spool.weight) * 100))
+          const newPercent = Math.max(0, Math.round((newRemaining / currentCapacity) * 100))
           updates.push(
             tx.filamentSpool.update({
               where: { id: spool.id },
               data: {
                 remainingWeight: newRemaining,
+                remainingQuantity: newRemaining,
                 remainingPercent: newPercent,
               },
             })

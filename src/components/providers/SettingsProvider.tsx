@@ -6,6 +6,7 @@ import type { TenantSettings, SettingsContextType } from '@/model/settings'
 
 const defaultSettings: TenantSettings = {
   currency: 'USD',
+  softExpensePostingMode: 'SOFT_ONLY',
 }
 
 const SettingsContext = createContext<SettingsContextType>({
@@ -30,6 +31,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         const data = await response.json()
         setSettings({
           currency: data.currency || 'USD',
+          softExpensePostingMode:
+            data.softExpensePostingMode === 'POST_AS_EXPENSE'
+              ? 'POST_AS_EXPENSE'
+              : 'SOFT_ONLY',
         })
       }
     } catch (error) {

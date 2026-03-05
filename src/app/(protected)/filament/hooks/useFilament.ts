@@ -7,28 +7,36 @@ import type { Filament, FilamentSpool, FilamentType, FilamentColor } from '@/mod
 
 export interface FilamentFormData {
   brand: string
+  technology: 'FDM' | 'SLA' | 'SLS'
   typeId: string
   colorId: string
   costPerKg: string
+  baseLandedCostPerUnit: string
   supplier: string
   notes: string
 }
 
 export interface SpoolRow {
   weight: string
+  capacity: string
+  landedCostTotal: string
   remainingPercent: string
 }
 
 const initialFilamentForm: FilamentFormData = {
   brand: '',
+  technology: 'FDM',
   typeId: '',
   colorId: '',
   costPerKg: '',
+  baseLandedCostPerUnit: '',
   supplier: '',
   notes: '',
 }
 
-const initialSpools: SpoolRow[] = [{ weight: '1000', remainingPercent: '100' }]
+const initialSpools: SpoolRow[] = [
+  { weight: '1000', capacity: '1000', landedCostTotal: '', remainingPercent: '100' },
+]
 
 export function useFilament() {
   const router = useRouter()
@@ -131,9 +139,14 @@ export function useFilament() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             brand: filamentForm.brand,
+            technology: filamentForm.technology,
             typeId: filamentForm.typeId,
             colorId: filamentForm.colorId,
             costPerKg: filamentForm.costPerKg ? parseFloat(filamentForm.costPerKg) : undefined,
+            baseLandedCostPerUnit: filamentForm.baseLandedCostPerUnit
+              ? parseFloat(filamentForm.baseLandedCostPerUnit)
+              : undefined,
+            defaultUnit: filamentForm.technology === 'SLA' ? 'MILLILITER' : 'GRAM',
             supplier: filamentForm.supplier || undefined,
             notes: filamentForm.notes || undefined,
           }),
@@ -165,6 +178,8 @@ export function useFilament() {
       try {
         const spools = spoolsToAdd.map((s) => ({
           weight: parseFloat(s.weight),
+          capacity: parseFloat(s.capacity || s.weight),
+          landedCostTotal: s.landedCostTotal ? parseFloat(s.landedCostTotal) : undefined,
           remainingPercent: parseInt(s.remainingPercent),
         }))
         const response = await fetch(
@@ -228,7 +243,10 @@ export function useFilament() {
   )
 
   const addSpoolRow = useCallback(() => {
-    setSpoolsToAdd((prev) => [...prev, { weight: '1000', remainingPercent: '100' }])
+    setSpoolsToAdd((prev) => [
+      ...prev,
+      { weight: '1000', capacity: '1000', landedCostTotal: '', remainingPercent: '100' },
+    ])
   }, [])
 
   const removeSpoolRow = useCallback((index: number) => {
@@ -236,10 +254,18 @@ export function useFilament() {
   }, [])
 
   const updateSpoolRow = useCallback(
-    (index: number, field: 'weight' | 'remainingPercent', value: string) => {
+    (
+      index: number,
+      field: 'weight' | 'capacity' | 'remainingPercent' | 'landedCostTotal',
+      value: string
+    ) => {
       setSpoolsToAdd((prev) => {
         const updated = [...prev]
-        updated[index] = { ...updated[index], [field]: value }
+        const row = { ...updated[index], [field]: value }
+        if (field === 'weight' && (!row.capacity || row.capacity === updated[index].weight)) {
+          row.capacity = value
+        }
+        updated[index] = row
         return updated
       })
     },

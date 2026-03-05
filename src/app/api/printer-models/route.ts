@@ -13,11 +13,13 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const brand = searchParams.get('brand')
+    const technology = searchParams.get('technology')
 
     const printerModels = await prisma.printerModel.findMany({
       where: {
         isActive: true,
         ...(brand && { brand }),
+        ...(technology ? { technology: technology as 'FDM' | 'SLA' | 'SLS' } : {}),
       },
       orderBy: [
         { brand: 'asc' },

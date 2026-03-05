@@ -1,5 +1,6 @@
 export interface TenantSettings {
   currency: string
+  softExpensePostingMode?: 'SOFT_ONLY' | 'POST_AS_EXPENSE'
 }
 
 export interface SettingsContextType {

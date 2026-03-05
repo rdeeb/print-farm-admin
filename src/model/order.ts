@@ -33,6 +33,7 @@ export interface OrderPart {
     id: string
     name: string
     filamentWeight: number
+    materialUsagePerUnit?: number
     filamentColor: {
       id: string
       name: string

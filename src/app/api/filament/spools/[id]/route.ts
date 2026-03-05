@@ -72,15 +72,19 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { weight, remainingPercent, purchaseDate, notes } = body
+    const { weight, capacity, remainingPercent, landedCostTotal, purchaseDate, notes } = body
 
-    const remainingWeight = Math.round(weight * (remainingPercent / 100))
+    const normalizedCapacity = capacity ?? weight
+    const remainingWeight = Math.round(normalizedCapacity * (remainingPercent / 100))
 
     const spool = await prisma.filamentSpool.update({
       where: { id: params.id },
       data: {
         weight,
+        capacity: normalizedCapacity,
         remainingWeight,
+        remainingQuantity: remainingWeight,
+        landedCostTotal: typeof landedCostTotal === 'number' ? landedCostTotal : existing.landedCostTotal,
         remainingPercent,
         purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
         notes: notes || null,

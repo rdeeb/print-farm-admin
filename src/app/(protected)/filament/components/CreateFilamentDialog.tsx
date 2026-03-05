@@ -101,6 +101,25 @@ export function CreateFilamentDialog({
           </div>
 
           <div className="space-y-2">
+            <Label>Technology</Label>
+            <Select
+              value={filamentForm.technology}
+              onValueChange={(value: 'FDM' | 'SLA' | 'SLS') =>
+                onFilamentFormChange({ ...filamentForm, technology: value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select technology" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FDM">FDM (Filament)</SelectItem>
+                <SelectItem value="SLA">SLA (Resin)</SelectItem>
+                <SelectItem value="SLS">SLS (Powder)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label>Filament Type</Label>
             <Select
               value={filamentForm.typeId}
@@ -151,7 +170,9 @@ export function CreateFilamentDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Cost per kg</Label>
+              <Label>
+                {filamentForm.technology === 'SLA' ? 'Cost per liter' : 'Cost per kg'}
+              </Label>
               <Input
                 type="number"
                 step="0.01"
@@ -162,6 +183,26 @@ export function CreateFilamentDialog({
                 placeholder="25.99"
               />
             </div>
+            <div className="space-y-2">
+              <Label>
+                Base Landed Cost per {filamentForm.technology === 'SLA' ? 'ml' : 'g'}
+              </Label>
+              <Input
+                type="number"
+                step="0.0001"
+                value={filamentForm.baseLandedCostPerUnit}
+                onChange={(e) =>
+                  onFilamentFormChange({
+                    ...filamentForm,
+                    baseLandedCostPerUnit: e.target.value,
+                  })
+                }
+                placeholder={filamentForm.technology === 'SLA' ? '0.08' : '0.03'}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
               <Label>Supplier</Label>
               <Input

@@ -85,21 +85,31 @@ const printerModelsData = [
   { brand: 'RatRig', model: 'V-Core 4 (400mm)', buildVolumeX: 400, buildVolumeY: 400, buildVolumeZ: 400, defaultNozzle: 0.4, avgPowerConsumption: 500, releaseYear: 2024 },
   { brand: 'RatRig', model: 'V-Core 4 (300mm)', buildVolumeX: 300, buildVolumeY: 300, buildVolumeZ: 300, defaultNozzle: 0.4, avgPowerConsumption: 400, releaseYear: 2024 },
   { brand: 'RatRig', model: 'V-Minion', buildVolumeX: 180, buildVolumeY: 180, buildVolumeZ: 180, defaultNozzle: 0.4, avgPowerConsumption: 200, releaseYear: 2022 },
+  { brand: 'Formlabs', model: 'Form 4', technology: 'SLA', buildVolumeX: 200, buildVolumeY: 125, buildVolumeZ: 210, defaultNozzle: 0, avgPowerConsumption: 100, releaseYear: 2024 },
+  { brand: 'Anycubic', model: 'Photon Mono M5s', technology: 'SLA', buildVolumeX: 218, buildVolumeY: 123, buildVolumeZ: 200, defaultNozzle: 0, avgPowerConsumption: 80, releaseYear: 2023 },
+  { brand: 'Elegoo', model: 'Saturn 4 Ultra', technology: 'SLA', buildVolumeX: 218, buildVolumeY: 123, buildVolumeZ: 220, defaultNozzle: 0, avgPowerConsumption: 85, releaseYear: 2024 },
+  { brand: 'Formlabs', model: 'Fuse 1+ 30W', technology: 'SLS', buildVolumeX: 165, buildVolumeY: 165, buildVolumeZ: 300, defaultNozzle: 0, avgPowerConsumption: 4500, releaseYear: 2023 },
+  { brand: 'Sinterit', model: 'Lisa X', technology: 'SLS', buildVolumeX: 130, buildVolumeY: 180, buildVolumeZ: 330, defaultNozzle: 0, avgPowerConsumption: 2500, releaseYear: 2022 },
 ]
 
 async function main() {
   console.log('Seeding printer models...')
 
   for (const printerModel of printerModelsData) {
+    const payload = {
+      ...printerModel,
+      technology: printerModel.technology || 'FDM',
+    }
     await prisma.printerModel.upsert({
       where: {
-        brand_model: {
-          brand: printerModel.brand,
-          model: printerModel.model,
+        brand_model_technology: {
+          brand: payload.brand,
+          model: payload.model,
+          technology: payload.technology,
         },
       },
-      update: printerModel,
-      create: printerModel,
+      update: payload,
+      create: payload,
     })
   }
 

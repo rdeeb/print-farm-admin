@@ -8,6 +8,7 @@ interface PrintersPageHeaderProps {
   isDialogOpen: boolean
   onDialogOpenChange: (open: boolean) => void
   selectedPreset: string
+  onTechnologySelect: (technology: 'FDM' | 'SLA' | 'SLS') => void
   onPresetSelect: (presetId: string) => void
   formData: PrinterFormData
   onFormDataChange: (data: PrinterFormData) => void
@@ -28,6 +29,7 @@ export function PrintersPageHeader({
   isDialogOpen,
   onDialogOpenChange,
   selectedPreset,
+  onTechnologySelect,
   onPresetSelect,
   formData,
   onFormDataChange,
@@ -57,6 +59,7 @@ export function PrintersPageHeader({
             open={isDialogOpen}
             onOpenChange={onDialogOpenChange}
             selectedPreset={selectedPreset}
+            onTechnologySelect={onTechnologySelect}
             onPresetSelect={onPresetSelect}
             formData={formData}
             onFormDataChange={onFormDataChange}

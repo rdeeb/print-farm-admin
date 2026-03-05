@@ -28,6 +28,7 @@ export default function PrintersPage() {
     editForm,
     setEditForm,
     isSavingEdit,
+    handleTechnologySelect,
     handlePresetSelect,
     resetForm,
     handleSubmit,
@@ -48,6 +49,7 @@ export default function PrintersPage() {
         isDialogOpen={isDialogOpen}
         onDialogOpenChange={setIsDialogOpen}
         selectedPreset={selectedPreset}
+        onTechnologySelect={handleTechnologySelect}
         onPresetSelect={handlePresetSelect}
         formData={formData}
         onFormDataChange={setFormData}

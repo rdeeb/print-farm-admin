@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
           filamentMultiplier: 1,
           printerLaborCostMultiplier: 1,
           hardwareMultiplier: 1,
+          softExpensePostingMode: 'SOFT_ONLY',
           currency: 'USD',
         },
       })
@@ -79,6 +80,7 @@ export async function POST(request: NextRequest) {
       filamentMultiplier,
       printerLaborCostMultiplier,
       hardwareMultiplier,
+      softExpensePostingMode,
       currency,
     } = body
 
@@ -119,6 +121,10 @@ export async function POST(request: NextRequest) {
         filamentMultiplier: toNumber(filamentMultiplier, 1),
         printerLaborCostMultiplier: toNumber(printerLaborCostMultiplier, 1),
         hardwareMultiplier: toNumber(hardwareMultiplier, 1),
+        softExpensePostingMode:
+          softExpensePostingMode === 'POST_AS_EXPENSE'
+            ? 'POST_AS_EXPENSE'
+            : 'SOFT_ONLY',
         currency: typeof currency === 'string' ? currency : 'USD',
       },
       create: {
@@ -130,6 +136,10 @@ export async function POST(request: NextRequest) {
         filamentMultiplier: toNumber(filamentMultiplier, 1),
         printerLaborCostMultiplier: toNumber(printerLaborCostMultiplier, 1),
         hardwareMultiplier: toNumber(hardwareMultiplier, 1),
+        softExpensePostingMode:
+          softExpensePostingMode === 'POST_AS_EXPENSE'
+            ? 'POST_AS_EXPENSE'
+            : 'SOFT_ONLY',
         currency: typeof currency === 'string' ? currency : 'USD',
       },
     })

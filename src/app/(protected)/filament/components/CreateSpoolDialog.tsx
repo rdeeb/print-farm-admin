@@ -30,7 +30,7 @@ interface CreateSpoolDialogProps {
   onRemoveSpoolRow: (index: number) => void
   onUpdateSpoolRow: (
     index: number,
-    field: 'weight' | 'remainingPercent',
+    field: 'weight' | 'capacity' | 'remainingPercent' | 'landedCostTotal',
     value: string
   ) => void
   onSubmit: (e: React.FormEvent) => void
@@ -88,14 +88,28 @@ export function CreateSpoolDialog({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="250">250g</SelectItem>
-                      <SelectItem value="500">500g</SelectItem>
-                      <SelectItem value="750">750g</SelectItem>
-                      <SelectItem value="1000">1kg</SelectItem>
-                      <SelectItem value="2000">2kg</SelectItem>
-                      <SelectItem value="3000">3kg</SelectItem>
+                      <SelectItem value="250">250</SelectItem>
+                      <SelectItem value="500">500</SelectItem>
+                      <SelectItem value="750">750</SelectItem>
+                      <SelectItem value="1000">1000</SelectItem>
+                      <SelectItem value="2000">2000</SelectItem>
+                      <SelectItem value="3000">3000</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="w-20">
+                  <Label className="text-xs">Cost</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={spool.landedCostTotal}
+                    onChange={(e) =>
+                      onUpdateSpoolRow(index, 'landedCostTotal', e.target.value)
+                    }
+                    className="h-9"
+                    placeholder="Auto"
+                  />
                 </div>
                 <div className="w-24">
                   <Label className="text-xs">Remaining</Label>
@@ -114,11 +128,8 @@ export function CreateSpoolDialog({
                   </div>
                 </div>
                 <div className="text-sm text-gray-600 w-16 text-right">
-                  {Math.round(
-                    parseFloat(spool.weight) *
-                      (parseInt(spool.remainingPercent) / 100)
-                  )}
-                  g
+                  {Math.round(parseFloat(spool.capacity || spool.weight) * (parseInt(spool.remainingPercent) / 100))}
+                  {selectedFilament?.defaultUnit === 'MILLILITER' ? 'ml' : 'g'}
                 </div>
                 {spoolsToAdd.length > 1 && (
                   <Button

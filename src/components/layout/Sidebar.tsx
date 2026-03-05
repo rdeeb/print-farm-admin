@@ -18,6 +18,7 @@ import {
   Building2,
   UserCircle,
   Wrench,
+  Wallet,
 } from 'lucide-react'
 import type { NavigationItem } from '@/model/navigation'
 
@@ -29,6 +30,7 @@ const navigation: NavigationItem[] = [
   { name: 'Print Queue', href: '/queue', icon: ListOrdered },
   { name: 'Printers', href: '/printers', icon: Printer },
   { name: 'Filament', href: '/filament', icon: Package },
+  { name: 'Finance', href: '/finance', icon: Wallet },
   { name: 'Hardware', href: '/hardware', icon: Wrench },
   { name: 'Inventory', href: '/inventory', icon: Building2 },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },

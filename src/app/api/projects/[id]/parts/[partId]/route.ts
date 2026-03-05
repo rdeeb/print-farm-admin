@@ -43,7 +43,15 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { name, description, filamentWeight, printTime, quantity, filamentColorId } = body
+    const {
+      name,
+      description,
+      filamentWeight,
+      materialUsagePerUnit,
+      printTime,
+      quantity,
+      filamentColorId,
+    } = body
 
     const part = await prisma.projectPart.update({
       where: { id: params.partId },
@@ -51,6 +59,7 @@ export async function PATCH(
         name,
         description: description || null,
         filamentWeight,
+        materialUsagePerUnit: materialUsagePerUnit ?? filamentWeight,
         printTime: printTime || null,
         quantity,
         filamentColorId: filamentColorId || null,

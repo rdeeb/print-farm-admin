@@ -77,13 +77,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, model, brand, nozzleSize, buildVolume, powerConsumption, cost } = body
+    const { name, model, brand, technology, nozzleSize, buildVolume, powerConsumption, cost } = body
 
     const printer = await prisma.printer.create({
       data: {
         name,
         model,
         brand: brand || null,
+        technology: technology || 'FDM',
         nozzleSize: nozzleSize || null,
         buildVolume: buildVolume || null,
         powerConsumption: powerConsumption || null,

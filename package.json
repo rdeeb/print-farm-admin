@@ -15,6 +15,7 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:generate:fix": "if exist node_modules\\.prisma\\client (rd /s /q node_modules\\.prisma\\client) && prisma generate",
+    "db:backfill:material-finance": "tsx prisma/backfill-material-finance.ts",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "docker:up": "docker-compose up -d",

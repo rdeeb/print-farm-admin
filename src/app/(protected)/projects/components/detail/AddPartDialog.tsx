@@ -84,7 +84,7 @@ export function AddPartDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="filamentWeight">Filament (g)</Label>
+              <Label htmlFor="filamentWeight">Material Usage (g/ml)</Label>
               <Input
                 id="filamentWeight"
                 type="number"

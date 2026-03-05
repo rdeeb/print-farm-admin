@@ -41,8 +41,11 @@ export async function GET(
 
     return NextResponse.json({
       ...filament,
-      totalWeight: filament.spools.reduce((sum, s) => sum + s.weight, 0),
-      totalRemainingWeight: filament.spools.reduce((sum, s) => sum + s.remainingWeight, 0),
+      totalWeight: filament.spools.reduce((sum, s) => sum + (s.capacity ?? s.weight), 0),
+      totalRemainingWeight: filament.spools.reduce(
+        (sum, s) => sum + (s.remainingQuantity ?? s.remainingWeight),
+        0
+      ),
     })
   } catch (error) {
     console.error('Error fetching filament:', error)
@@ -77,12 +80,27 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { costPerKg, supplier, notes } = body
+    const {
+      costPerKg,
+      supplier,
+      notes,
+      baseLandedCostPerUnit,
+      defaultUnit,
+      technology,
+    } = body
 
     const filament = await prisma.filament.update({
       where: { id: params.id },
       data: {
         costPerKg: costPerKg || null,
+        baseLandedCostPerUnit:
+          typeof baseLandedCostPerUnit === 'number'
+            ? baseLandedCostPerUnit
+            : costPerKg
+              ? costPerKg / 1000
+              : null,
+        ...(defaultUnit ? { defaultUnit } : {}),
+        ...(technology ? { technology } : {}),
         supplier: supplier || null,
         notes: notes || null,
       },
@@ -104,8 +122,11 @@ export async function PATCH(
 
     return NextResponse.json({
       ...filament,
-      totalWeight: filament.spools.reduce((sum, s) => sum + s.weight, 0),
-      totalRemainingWeight: filament.spools.reduce((sum, s) => sum + s.remainingWeight, 0),
+      totalWeight: filament.spools.reduce((sum, s) => sum + (s.capacity ?? s.weight), 0),
+      totalRemainingWeight: filament.spools.reduce(
+        (sum, s) => sum + (s.remainingQuantity ?? s.remainingWeight),
+        0
+      ),
     })
   } catch (error) {
     console.error('Error updating filament:', error)

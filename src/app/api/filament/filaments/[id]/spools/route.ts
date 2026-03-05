@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
+import { createLedgerEntry, getTenantFinanceContext } from '@/lib/finance-ledger'
 
 export async function POST(
   request: NextRequest,
@@ -24,6 +25,11 @@ export async function POST(
         id: params.id,
         tenantId: session.user.tenantId,
       },
+      select: {
+        id: true,
+        defaultUnit: true,
+        baseLandedCostPerUnit: true,
+      },
     })
 
     if (!filament) {
@@ -38,20 +44,57 @@ export async function POST(
     }
 
     // Create all spools
+    const { currency } = await getTenantFinanceContext(session.user.tenantId)
+
     const createdSpools = await prisma.$transaction(
-      spools.map((spool: { weight: number; remainingPercent: number; purchaseDate?: string; notes?: string }) => {
-        const remainingWeight = Math.round(spool.weight * (spool.remainingPercent / 100))
+      spools.map(
+        (spool: {
+          weight: number
+          capacity?: number
+          landedCostTotal?: number
+          remainingPercent: number
+          purchaseDate?: string
+          notes?: string
+        }) => {
+        const capacity = spool.capacity ?? spool.weight
+        const remainingWeight = Math.round(capacity * (spool.remainingPercent / 100))
+        const landedCostTotal =
+          typeof spool.landedCostTotal === 'number'
+            ? spool.landedCostTotal
+            : filament.baseLandedCostPerUnit
+              ? capacity * filament.baseLandedCostPerUnit
+              : null
+
         return prisma.filamentSpool.create({
           data: {
             weight: spool.weight,
             remainingWeight,
+            capacity,
+            remainingQuantity: remainingWeight,
+            landedCostTotal,
             remainingPercent: spool.remainingPercent,
             purchaseDate: spool.purchaseDate ? new Date(spool.purchaseDate) : null,
             notes: spool.notes || null,
             filamentId: params.id,
           },
         })
-      })
+        }
+      )
+    )
+
+    await Promise.all(
+      createdSpools.map((spool) =>
+        createLedgerEntry({
+          tenantId: session.user.tenantId,
+          amount: spool.landedCostTotal || 0,
+          type: 'EXPENSE',
+          source: 'CONTAINER_INTAKE',
+          currency,
+          autoKey: `container-intake-${spool.id}`,
+          note: `Container intake for ${filament.defaultUnit === 'MILLILITER' ? 'resin' : 'material'}`,
+          spoolId: spool.id,
+        })
+      )
     )
 
     return NextResponse.json(createdSpools, { status: 201 })

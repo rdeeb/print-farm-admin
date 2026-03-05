@@ -6,6 +6,7 @@ import type { PrinterData, PrinterModel } from '@/model/printer'
 
 export interface PrinterFormData {
   name: string
+  technology: 'FDM' | 'SLA' | 'SLS'
   model: string
   brand: string
   nozzleSize: string
@@ -24,6 +25,7 @@ export interface EditFormData {
 
 const initialFormData: PrinterFormData = {
   name: '',
+  technology: 'FDM',
   model: '',
   brand: '',
   nozzleSize: '0.4',
@@ -85,7 +87,7 @@ export function usePrinters() {
       try {
         const [printersRes, modelsRes] = await Promise.all([
           fetch('/api/printers'),
-          fetch('/api/printer-models'),
+          fetch(`/api/printer-models?technology=${formData.technology}`),
         ])
         if (printersRes.ok) {
           const data = await printersRes.json()
@@ -104,13 +106,16 @@ export function usePrinters() {
       }
     }
     fetchData()
-  }, [])
+  }, [formData.technology])
 
   const handlePresetSelect = useCallback(
     (presetId: string) => {
       setSelectedPreset(presetId)
       if (presetId === 'custom') {
-        setFormData(initialFormData)
+        setFormData((current) => ({
+          ...initialFormData,
+          technology: current.technology,
+        }))
         return
       }
       const preset = printerModels.find((m) => m.id === presetId)
@@ -118,6 +123,7 @@ export function usePrinters() {
         setFormData({
           name: '',
           model: preset.model,
+          technology: preset.technology,
           brand: preset.brand,
           nozzleSize: preset.defaultNozzle.toString(),
           buildVolumeX: preset.buildVolumeX.toString(),
@@ -129,6 +135,17 @@ export function usePrinters() {
       }
     },
     [printerModels]
+  )
+
+  const handleTechnologySelect = useCallback(
+    (technology: 'FDM' | 'SLA' | 'SLS') => {
+      setSelectedPreset('')
+      setFormData({
+        ...initialFormData,
+        technology,
+      })
+    },
+    []
   )
 
   const resetForm = useCallback(() => {
@@ -146,8 +163,12 @@ export function usePrinters() {
           body: JSON.stringify({
             name: formData.name,
             model: formData.model,
+            technology: formData.technology,
             brand: formData.brand || null,
-            nozzleSize: parseFloat(formData.nozzleSize),
+            nozzleSize:
+              formData.technology === 'FDM'
+                ? parseFloat(formData.nozzleSize)
+                : null,
             buildVolume: {
               x: parseInt(formData.buildVolumeX),
               y: parseInt(formData.buildVolumeY),
@@ -238,6 +259,7 @@ export function usePrinters() {
     editForm,
     setEditForm,
     isSavingEdit,
+    handleTechnologySelect,
     handlePresetSelect,
     resetForm,
     handleSubmit,

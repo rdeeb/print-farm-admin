@@ -7,6 +7,7 @@ export interface ProjectPart {
   name: string
   description: string | null
   filamentWeight: number
+  materialUsagePerUnit?: number
   printTime: number | null
   quantity: number
   filamentColor: {
@@ -98,12 +99,16 @@ export interface ProjectCostBreakdown {
 export interface ProjectForCostCalculation {
   parts: {
     filamentWeight: number
+    materialUsagePerUnit?: number | null
     quantity: number
     printTime: number | null
     filamentColorId?: string | null
     spool?: {
+      capacity?: number | null
+      landedCostTotal?: number | null
       filament?: {
         costPerKg?: number | null
+        baseLandedCostPerUnit?: number | null
         colorId?: string
       } | null
     } | null

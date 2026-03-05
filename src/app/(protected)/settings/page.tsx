@@ -44,6 +44,7 @@ export default function SettingsPage() {
     filamentMultiplier: 1,
     printerLaborCostMultiplier: 1,
     hardwareMultiplier: 1,
+    softExpensePostingMode: 'SOFT_ONLY',
     currency: 'USD',
   })
 
@@ -100,6 +101,10 @@ export default function SettingsPage() {
             : 1,
         hardwareMultiplier:
           typeof data.hardwareMultiplier === 'number' ? data.hardwareMultiplier : 1,
+        softExpensePostingMode:
+          data.softExpensePostingMode === 'POST_AS_EXPENSE'
+            ? 'POST_AS_EXPENSE'
+            : 'SOFT_ONLY',
         currency: typeof data.currency === 'string' ? data.currency : 'USD',
       })
     } catch (error) {
@@ -193,6 +198,40 @@ export default function SettingsPage() {
               }
               placeholder="Your tenant name"
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Coins className="h-5 w-5" />
+            Soft Expense Posting
+          </CardTitle>
+          <CardDescription>
+            Control whether soft expenses stay non-cash or post as real expenses
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="softExpensePostingMode">Posting Mode</Label>
+            <Select
+              value={settings.softExpensePostingMode}
+              onValueChange={(value) =>
+                setSettings((prev) => ({
+                  ...prev,
+                  softExpensePostingMode: value,
+                }))
+              }
+            >
+              <SelectTrigger id="softExpensePostingMode" className="w-full">
+                <SelectValue placeholder="Select posting mode" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SOFT_ONLY">Store as soft (non-cash)</SelectItem>
+                <SelectItem value="POST_AS_EXPENSE">Post directly as expense</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>

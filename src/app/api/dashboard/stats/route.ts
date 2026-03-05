@@ -196,48 +196,36 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    // Financial data - Get completed orders this week/month with project prices
+    // Financial data from ledger
     const monthAgo = getStartOfDaysAgoUTC(30)
+    const [ledgerWeek, ledgerMonth] = await Promise.all([
+      prisma.financeLedgerEntry.findMany({
+        where: { tenantId, date: { gte: weekAgo } },
+        select: { amount: true, type: true },
+      }),
+      prisma.financeLedgerEntry.findMany({
+        where: { tenantId, date: { gte: monthAgo } },
+        select: { amount: true, type: true },
+      }),
+    ])
 
-    const completedOrdersThisWeek = await prisma.order.findMany({
-      where: {
-        tenantId,
-        status: 'DELIVERED',
-        updatedAt: { gte: weekAgo },
-      },
-      include: {
-        project: {
-          select: { salesPrice: true },
+    const summarizePeriod = (entries: { amount: number; type: string }[]) =>
+      entries.reduce(
+        (acc, entry) => {
+          if (entry.type === 'INCOME') acc.revenue += entry.amount
+          if (entry.type === 'EXPENSE') acc.expenses += entry.amount
+          if (entry.type === 'SOFT_EXPENSE') acc.soft += entry.amount
+          return acc
         },
-      },
-    })
+        { revenue: 0, expenses: 0, soft: 0 }
+      )
 
-    const completedOrdersThisMonth = await prisma.order.findMany({
-      where: {
-        tenantId,
-        status: 'DELIVERED',
-        updatedAt: { gte: monthAgo },
-      },
-      include: {
-        project: {
-          select: { salesPrice: true },
-        },
-      },
-    })
-
-    // Calculate revenue (quantity * salesPrice)
-    const revenueThisWeek = completedOrdersThisWeek.reduce((sum, order) => {
-      return sum + (order.quantity * (order.project.salesPrice || 0))
-    }, 0)
-
-    const revenueThisMonth = completedOrdersThisMonth.reduce((sum, order) => {
-      return sum + (order.quantity * (order.project.salesPrice || 0))
-    }, 0)
-
-    // Estimate profit (rough estimate: 40% margin typical for 3D printing)
-    const profitMargin = 0.4
-    const profitThisWeek = revenueThisWeek * profitMargin
-    const profitThisMonth = revenueThisMonth * profitMargin
+    const weekSummary = summarizePeriod(ledgerWeek)
+    const monthSummary = summarizePeriod(ledgerMonth)
+    const revenueThisWeek = weekSummary.revenue
+    const revenueThisMonth = monthSummary.revenue
+    const profitThisWeek = weekSummary.revenue - weekSummary.expenses - weekSummary.soft
+    const profitThisMonth = monthSummary.revenue - monthSummary.expenses - monthSummary.soft
 
     // Outstanding balances (orders delivered but we'll assume not all paid)
     // For now, use pending orders value as proxy
@@ -258,8 +246,16 @@ export async function GET(request: NextRequest) {
     }, 0)
 
     // Average order value
-    const avgOrderValue = completedOrdersThisMonth.length > 0
-      ? revenueThisMonth / completedOrdersThisMonth.length
+    const deliveredCountMonth = await prisma.order.count({
+      where: {
+        tenantId,
+        status: 'DELIVERED',
+        updatedAt: { gte: monthAgo },
+      },
+    })
+
+    const avgOrderValue = deliveredCountMonth > 0
+      ? revenueThisMonth / deliveredCountMonth
       : 0
 
     // Estimated loss from failed prints (rough: $5 avg material cost per failed job)
@@ -296,8 +292,10 @@ export async function GET(request: NextRequest) {
       outstandingValue,
       avgOrderValue,
       estimatedLossFromFails,
-      ordersCompletedThisWeek: completedOrdersThisWeek.length,
-      ordersCompletedThisMonth: completedOrdersThisMonth.length,
+      ordersCompletedThisWeek: await prisma.order.count({
+        where: { tenantId, status: 'DELIVERED', updatedAt: { gte: weekAgo } },
+      }),
+      ordersCompletedThisMonth: deliveredCountMonth,
 
       // Breakdowns
       ordersBreakdown,

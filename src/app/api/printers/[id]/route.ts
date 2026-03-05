@@ -65,7 +65,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { name, model, brand, nozzleSize, buildVolume, powerConsumption, cost } = body
+    const { name, model, brand, technology, nozzleSize, buildVolume, powerConsumption, cost } = body
 
     const printer = await prisma.printer.update({
       where: { id: params.id },
@@ -73,6 +73,7 @@ export async function PATCH(
         ...(name !== undefined && { name }),
         ...(model !== undefined && { model }),
         ...(brand !== undefined && { brand: brand || null }),
+        ...(technology !== undefined && { technology }),
         ...(nozzleSize !== undefined && { nozzleSize: nozzleSize ?? null }),
         ...(buildVolume !== undefined && { buildVolume: buildVolume ?? null }),
         ...(powerConsumption !== undefined && { powerConsumption: powerConsumption ?? null }),

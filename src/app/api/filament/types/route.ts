@@ -11,7 +11,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { searchParams } = new URL(request.url)
+    const technology = searchParams.get('technology')
+
     const types = await prisma.filamentType.findMany({
+      where: {
+        ...(technology ? { technology: technology as 'FDM' | 'SLA' | 'SLS' } : {}),
+      },
       include: {
         _count: {
           select: { filaments: true }

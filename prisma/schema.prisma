@@ -53,15 +53,16 @@ model Tenant {
   updatedAt DateTime @updatedAt
 
   // Relationships
-  users     User[]
-  clients   Client[]
-  projects  Project[]
-  orders    Order[]
-  filaments Filament[]
-  printers  Printer[]
-  printJobs PrintJob[]
-  settings  TenantSettings?
-  hardware  Hardware[]
+  users                User[]
+  clients              Client[]
+  projects             Project[]
+  orders               Order[]
+  filaments            Filament[]
+  printers             Printer[]
+  printJobs            PrintJob[]
+  settings             TenantSettings?
+  hardware             Hardware[]
+  financeLedgerEntries FinanceLedgerEntry[]
 
   @@map("tenants")
 }
@@ -100,9 +101,10 @@ enum UserRole {
 
 // Shared Filament Library (global across tenants)
 model FilamentType {
-  id   String @id @default(cuid())
-  name String @unique
-  code String @unique
+  id         String            @id @default(cuid())
+  name       String            @unique
+  code       String            @unique
+  technology PrinterTechnology @default(FDM)
 
   colors    FilamentColor[]
   filaments Filament[]
@@ -126,16 +128,19 @@ model FilamentColor {
 
 // Tenant-specific Filament Definition (Brand + Type + Color)
 model Filament {
-  id        String   @id @default(cuid())
-  brand     String
-  costPerKg Float?
-  supplier  String?
-  notes     String?
-  tenantId  String
-  typeId    String
-  colorId   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                    String            @id @default(cuid())
+  brand                 String
+  costPerKg             Float?
+  baseLandedCostPerUnit Float?
+  technology            PrinterTechnology @default(FDM)
+  defaultUnit           MaterialUnit      @default(GRAM)
+  supplier              String?
+  notes                 String?
+  tenantId              String
+  typeId                String
+  colorId               String
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
 
   // Relations
   tenant    Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -150,20 +155,24 @@ model Filament {
 
 // Individual Spool Inventory
 model FilamentSpool {
-  id               String    @id @default(cuid())
-  weight           Float // grams (spool size)
-  remainingWeight  Float // grams
-  remainingPercent Int // 0-100
-  purchaseDate     DateTime?
-  notes            String?
-  filamentId       String
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id                String    @id @default(cuid())
+  weight            Float // grams (spool size)
+  remainingWeight   Float // grams
+  capacity          Float?
+  remainingQuantity Float?
+  landedCostTotal   Float?
+  remainingPercent  Int // 0-100
+  purchaseDate      DateTime?
+  notes             String?
+  filamentId        String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   // Relations
-  filament  Filament      @relation(fields: [filamentId], references: [id], onDelete: Cascade)
-  parts     ProjectPart[]
-  printJobs PrintJob[]
+  filament             Filament             @relation(fields: [filamentId], references: [id], onDelete: Cascade)
+  parts                ProjectPart[]
+  printJobs            PrintJob[]
+  financeLedgerEntries FinanceLedgerEntry[]
 
   @@map("filament_spools")
 }
@@ -182,11 +191,12 @@ model Project {
   updatedAt    DateTime      @updatedAt
 
   // Relations
-  tenant    Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  createdBy User              @relation("CreatedBy", fields: [createdById], references: [id])
-  parts     ProjectPart[]
-  orders    Order[]
-  hardware  ProjectHardware[]
+  tenant               Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy            User                 @relation("CreatedBy", fields: [createdById], references: [id])
+  parts                ProjectPart[]
+  orders               Order[]
+  hardware             ProjectHardware[]
+  financeLedgerEntries FinanceLedgerEntry[]
 
   @@map("projects")
 }
@@ -199,17 +209,18 @@ enum ProjectStatus {
 }
 
 model ProjectPart {
-  id              String   @id @default(cuid())
-  name            String
-  description     String?
-  filamentWeight  Float // grams per part
-  printTime       Int? // minutes per part
-  quantity        Int // number of parts needed
-  projectId       String
-  filamentColorId String?
-  spoolId         String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  name                 String
+  description          String?
+  filamentWeight       Float // grams per part
+  materialUsagePerUnit Float?
+  printTime            Int? // minutes per part
+  quantity             Int // number of parts needed
+  projectId            String
+  filamentColorId      String?
+  spoolId              String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   // Relations
   project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -244,12 +255,13 @@ model Client {
 
 // Order Management
 model Order {
-  id          String        @id @default(cuid())
-  orderNumber String        @unique
-  quantity    Int
-  status      OrderStatus   @default(PENDING)
-  priority    OrderPriority @default(MEDIUM)
-  dueDate     DateTime?
+  id            String         @id @default(cuid())
+  orderNumber   String         @unique
+  quantity      Int
+  status        OrderStatus    @default(PENDING)
+  priority      OrderPriority  @default(MEDIUM)
+  dueDate       DateTime?
+  paymentStatus PaymentStatus?
 
   // Client Reference
   clientId String
@@ -264,12 +276,13 @@ model Order {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client     Client      @relation(fields: [clientId], references: [id])
-  project    Project     @relation(fields: [projectId], references: [id])
-  createdBy  User        @relation("CreatedBy", fields: [createdById], references: [id])
-  printJobs  PrintJob[]
-  orderParts OrderPart[]
+  tenant               Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client               Client               @relation(fields: [clientId], references: [id])
+  project              Project              @relation(fields: [projectId], references: [id])
+  createdBy            User                 @relation("CreatedBy", fields: [createdById], references: [id])
+  printJobs            PrintJob[]
+  orderParts           OrderPart[]
+  financeLedgerEntries FinanceLedgerEntry[]
 
   @@map("orders")
 }
@@ -290,6 +303,12 @@ enum OrderPriority {
   MEDIUM
   HIGH
   URGENT
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
 }
 
 enum OrderPartStatus {
@@ -327,36 +346,38 @@ enum ClientSource {
 
 // Shared Printer Model Library (global across tenants - for preset selection)
 model PrinterModel {
-  id                  String  @id @default(cuid())
+  id                  String            @id @default(cuid())
   brand               String
   model               String
+  technology          PrinterTechnology @default(FDM)
   buildVolumeX        Int // mm
   buildVolumeY        Int // mm
   buildVolumeZ        Int // mm
-  defaultNozzle       Float   @default(0.4) // mm
+  defaultNozzle       Float             @default(0.4) // mm
   avgPowerConsumption Float? // Watts (average during printing)
   releaseYear         Int?
-  isActive            Boolean @default(true)
+  isActive            Boolean           @default(true)
 
-  @@unique([brand, model])
+  @@unique([brand, model, technology])
   @@map("printer_models")
 }
 
 // Printer Management (tenant-specific instances)
 model Printer {
-  id               String        @id @default(cuid())
+  id               String            @id @default(cuid())
   name             String
   model            String
   brand            String?
-  status           PrinterStatus @default(IDLE)
+  technology       PrinterTechnology @default(FDM)
+  status           PrinterStatus     @default(IDLE)
   buildVolume      Json? // {x, y, z} in mm
   nozzleSize       Float? // mm
   powerConsumption Float? // Watts (average during printing)
-  cost             Float?        // Total printer cost; operating cost per hour = cost / 13140
-  isActive         Boolean       @default(true)
+  cost             Float? // Total printer cost; operating cost per hour = cost / 13140
+  isActive         Boolean           @default(true)
   tenantId         String
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   // Relations
   tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -407,6 +428,34 @@ model PrintJob {
   @@map("print_jobs")
 }
 
+model FinanceLedgerEntry {
+  id        String          @id @default(cuid())
+  tenantId  String
+  date      DateTime        @default(now())
+  type      LedgerEntryType
+  source    LedgerSource
+  amount    Float
+  currency  String          @default("USD")
+  isNonCash Boolean         @default(false)
+  autoKey   String?         @unique
+  note      String?
+  metadata  Json?
+  orderId   String?
+  spoolId   String?
+  projectId String?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  tenant  Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order   Order?         @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  spool   FilamentSpool? @relation(fields: [spoolId], references: [id], onDelete: SetNull)
+  project Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, date])
+  @@index([tenantId, type])
+  @@map("finance_ledger_entries")
+}
+
 enum PrintJobStatus {
   QUEUED
   PRINTING
@@ -438,18 +487,19 @@ model Notification {
 }
 
 model TenantSettings {
-  id                         String   @id @default(cuid())
-  tenantId                   String   @unique
-  printingHoursDay           Float    @default(24.0) // Total hours available for printing per day
+  id                         String                 @id @default(cuid())
+  tenantId                   String                 @unique
+  printingHoursDay           Float                  @default(24.0) // Total hours available for printing per day
   printingDays               Json? // Array of days allowed for printing
-  costPerKwh                 Float    @default(0.0)
-  laborCostPerHour           Float    @default(0.0)
-  filamentMultiplier         Float    @default(1.0)
-  printerLaborCostMultiplier Float    @default(1.0)
-  hardwareMultiplier         Float    @default(1.0)
-  currency                   String   @default("USD")
-  createdAt                  DateTime @default(now())
-  updatedAt                  DateTime @updatedAt
+  costPerKwh                 Float                  @default(0.0)
+  laborCostPerHour           Float                  @default(0.0)
+  filamentMultiplier         Float                  @default(1.0)
+  printerLaborCostMultiplier Float                  @default(1.0)
+  hardwareMultiplier         Float                  @default(1.0)
+  softExpensePostingMode     SoftExpensePostingMode @default(SOFT_ONLY)
+  currency                   String                 @default("USD")
+  createdAt                  DateTime               @default(now())
+  updatedAt                  DateTime               @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -505,4 +555,34 @@ enum HardwareUnit {
   GRAMS // Grams (putty, filler)
   CM // Centimeters (tape, wire)
   UNITS // Generic units
+}
+
+enum PrinterTechnology {
+  FDM
+  SLA
+  SLS
+}
+
+enum MaterialUnit {
+  GRAM
+  MILLILITER
+}
+
+enum SoftExpensePostingMode {
+  SOFT_ONLY
+  POST_AS_EXPENSE
+}
+
+enum LedgerEntryType {
+  INCOME
+  EXPENSE
+  SOFT_EXPENSE
+  ADJUSTMENT
+}
+
+enum LedgerSource {
+  ORDER_DELIVERY
+  CONTAINER_INTAKE
+  SOFT_COST_ALLOCATION
+  MANUAL
 }

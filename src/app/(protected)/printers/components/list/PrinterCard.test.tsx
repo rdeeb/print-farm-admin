@@ -8,6 +8,7 @@ const mockPrinter: PrinterData = {
   name: 'Bambu X1C #1',
   model: 'X1 Carbon',
   brand: 'Bambu Lab',
+  technology: 'FDM',
   status: 'IDLE',
   buildVolume: { x: 256, y: 256, z: 256 },
   nozzleSize: 0.4,

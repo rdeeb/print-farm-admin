@@ -63,6 +63,10 @@ export function PrinterCard({ printer, canEdit, onEdit }: PrinterCardProps) {
               </span>
             </div>
           )}
+          <div className="flex justify-between">
+            <span className="text-gray-500">Technology</span>
+            <span>{printer.technology}</span>
+          </div>
           {printer.nozzleSize && (
             <div className="flex justify-between">
               <span className="text-gray-500">Nozzle</span>

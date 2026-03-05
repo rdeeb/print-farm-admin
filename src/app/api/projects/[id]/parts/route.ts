@@ -87,13 +87,22 @@ export async function POST(
     }
 
     const body = await request.json()
-    const { name, description, filamentWeight, printTime, quantity, filamentColorId } = body
+    const {
+      name,
+      description,
+      filamentWeight,
+      materialUsagePerUnit,
+      printTime,
+      quantity,
+      filamentColorId,
+    } = body
 
     const part = await prisma.projectPart.create({
       data: {
         name,
         description: description || null,
         filamentWeight,
+        materialUsagePerUnit: materialUsagePerUnit ?? filamentWeight,
         printTime: printTime || null,
         quantity,
         projectId: params.id,

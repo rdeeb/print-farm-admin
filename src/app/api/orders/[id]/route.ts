@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
+import { calculateProjectLandedCostById, getSoftExpenseAllocations } from '@/lib/production-utils'
+import { createLedgerEntry, getTenantFinanceContext } from '@/lib/finance-ledger'
 
 export async function GET(
   request: NextRequest,
@@ -189,6 +191,13 @@ export async function PATCH(
         tenantId: session.user.tenantId,
       },
       include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            salesPrice: true,
+          },
+        },
         orderParts: {
           select: {
             status: true,
@@ -232,6 +241,78 @@ export async function PATCH(
       where: { id: params.id },
       data,
     })
+
+    if (status === 'DELIVERED' && order.status !== 'DELIVERED') {
+      const { currency, softExpensePostingMode } = await getTenantFinanceContext(
+        session.user.tenantId
+      )
+      const incomeAmount = order.quantity * (order.project.salesPrice || 0)
+
+      await createLedgerEntry({
+        tenantId: session.user.tenantId,
+        amount: incomeAmount,
+        type: 'INCOME',
+        source: 'ORDER_DELIVERY',
+        currency,
+        orderId: order.id,
+        projectId: order.project.id,
+        autoKey: `order-delivery-income-${order.id}`,
+        note: `Income from order ${order.orderNumber}`,
+      })
+
+      const costBreakdown = await calculateProjectLandedCostById(
+        order.project.id,
+        session.user.tenantId
+      )
+
+      if (costBreakdown) {
+        const softAllocations = getSoftExpenseAllocations(costBreakdown)
+        const type = softExpensePostingMode === 'POST_AS_EXPENSE' ? 'EXPENSE' : 'SOFT_EXPENSE'
+        const isNonCash = softExpensePostingMode !== 'POST_AS_EXPENSE'
+
+        await Promise.all([
+          createLedgerEntry({
+            tenantId: session.user.tenantId,
+            amount: softAllocations.labor * order.quantity,
+            type,
+            source: 'SOFT_COST_ALLOCATION',
+            currency,
+            isNonCash,
+            orderId: order.id,
+            projectId: order.project.id,
+            autoKey: `order-soft-labor-${order.id}`,
+            note: `Labor allocation for order ${order.orderNumber}`,
+            metadata: { category: 'labor' },
+          }),
+          createLedgerEntry({
+            tenantId: session.user.tenantId,
+            amount: softAllocations.energy * order.quantity,
+            type,
+            source: 'SOFT_COST_ALLOCATION',
+            currency,
+            isNonCash,
+            orderId: order.id,
+            projectId: order.project.id,
+            autoKey: `order-soft-energy-${order.id}`,
+            note: `Energy allocation for order ${order.orderNumber}`,
+            metadata: { category: 'energy' },
+          }),
+          createLedgerEntry({
+            tenantId: session.user.tenantId,
+            amount: softAllocations.printer * order.quantity,
+            type,
+            source: 'SOFT_COST_ALLOCATION',
+            currency,
+            isNonCash,
+            orderId: order.id,
+            projectId: order.project.id,
+            autoKey: `order-soft-printer-${order.id}`,
+            note: `Printer allocation for order ${order.orderNumber}`,
+            metadata: { category: 'printer' },
+          }),
+        ])
+      }
+    }
 
     return NextResponse.json(updated)
   } catch (error) {

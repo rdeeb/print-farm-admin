@@ -99,11 +99,11 @@ Secondary: *"Replace your Notion + spreadsheet stack with one tool that knows yo
 **No DB schema changes required.**
 
 #### Tasks
-- [ ] **T-F0-1** Commit pnpm-lock.yaml and verify all dependencies resolve cleanly
-- [ ] **T-F0-2** Implement `src/lib/notifications.ts` — `createNotification()` utility with Prisma write + deduplication guard
-- [ ] **T-F0-3** Implement `src/lib/api-response.ts` — `apiError()` and `apiSuccess()` helpers; refactor all 45 API routes to use them
-- [ ] **T-F0-4** Improve `prisma/seed.ts` with realistic multi-state demo data (orders, failures, low-stock spools, job history)
-- [ ] **T-F0-5** Unit tests for `createNotification()` and `apiError()` helpers
+- [x] **T-F0-1** Commit pnpm-lock.yaml and verify all dependencies resolve cleanly
+- [x] **T-F0-2** Implement `src/lib/notifications.ts` — `createNotification()` utility with Prisma write + deduplication guard
+- [x] **T-F0-3** Implement `src/lib/api-response.ts` — `apiError()` and `apiSuccess()` helpers; refactor all 45 API routes to use them
+- [x] **T-F0-4** Improve `prisma/seed.ts` with realistic multi-state demo data (orders, failures, low-stock spools, job history)
+- [x] **T-F0-5** Unit tests for `createNotification()` and `apiError()` helpers
 
 ---
 
@@ -135,10 +135,10 @@ model PasswordResetToken {
 **Depends on:** F8 (email delivery) for sending the reset link. For M0, log the reset URL to console in development; wire email in M3.
 
 #### Tasks
-- [ ] **T-F0b-1** DB: Add `PasswordResetToken` model to schema + run migration
-- [ ] **T-F0b-2** API: `POST /api/auth/forgot-password` and `POST /api/auth/reset-password` routes
-- [ ] **T-F0b-3** UI: Forgot password page + reset password page; add "Forgot password?" link to sign-in form
-- [ ] **T-F0b-4** Unit tests for token generation, expiry validation, and password update logic
+- [x] **T-F0b-1** DB: Add `PasswordResetToken` model to schema + run migration
+- [x] **T-F0b-2** API: `POST /api/auth/forgot-password` and `POST /api/auth/reset-password` routes
+- [x] **T-F0b-3** UI: Forgot password page + reset password page; add "Forgot password?" link to sign-in form
+- [x] **T-F0b-4** Unit tests for token generation, expiry validation, and password update logic
 
 ---
 
@@ -171,12 +171,12 @@ pnpm add recharts
 - `src/app/(protected)/analytics/components/ChartContainer.tsx` — shared wrapper with loading/empty states
 
 #### Tasks
-- [ ] **T-F1-1** Install recharts; create `ChartContainer` base wrapper with loading + empty states
-- [ ] **T-F1-2** Build `GET /api/analytics/timeseries` endpoint — Prisma `groupBy` on orders and ledger entries by month
-- [ ] **T-F1-3** Implement `OrdersOverTimeChart` component using recharts `LineChart`
-- [ ] **T-F1-4** Implement `RevenueOverTimeChart` component using recharts `BarChart`
-- [ ] **T-F1-5** Implement `FilamentUsageChart` component; wire filament consumption from completed `PrintJob` records
-- [ ] **T-F1-6** Unit tests for timeseries API aggregation logic and chart component rendering
+- [x] **T-F1-1** Install recharts; create `ChartContainer` base wrapper with loading + empty states
+- [x] **T-F1-2** Build `GET /api/analytics/timeseries` endpoint — Prisma `groupBy` on orders and ledger entries by month
+- [x] **T-F1-3** Implement `OrdersOverTimeChart` component using recharts `LineChart`
+- [x] **T-F1-4** Implement `RevenueOverTimeChart` component using recharts `BarChart`
+- [x] **T-F1-5** Implement `FilamentUsageChart` component; wire filament consumption from completed `PrintJob` records
+- [x] **T-F1-6** Unit tests for timeseries API aggregation logic and chart component rendering
 
 ---
 
@@ -203,12 +203,12 @@ model FilamentSpool {
 - Spool management dialog — add threshold % input field
 
 #### Tasks
-- [ ] **T-F2-1** DB: Add `lowStockThreshold` to `FilamentSpool`; add `defaultLowStockThreshold` to `TenantSettings`; run migration
-- [ ] **T-F2-2** API: Wire `createNotification()` trigger in spool PATCH handler when threshold is crossed
-- [ ] **T-F2-3** UI: Add threshold input to spool creation/edit dialog; show current remaining % alongside threshold
-- [ ] **T-F2-4** UI: Low-stock badge on spool rows in `FilamentTypeCard`; color scale (amber ≤ threshold, red ≤ 10%)
-- [ ] **T-F2-5** UI: Low-stock banner on dashboard when any spool is in critical state
-- [ ] **T-F2-6** Unit tests for threshold trigger logic and badge rendering conditions
+- [x] **T-F2-1** DB: Add `lowStockThreshold` to `FilamentSpool`; add `defaultLowStockThreshold` to `TenantSettings`; run migration
+- [x] **T-F2-2** API: Wire `createNotification()` trigger in spool PATCH handler when threshold is crossed
+- [x] **T-F2-3** UI: Add threshold input to spool creation/edit dialog; show current remaining % alongside threshold
+- [x] **T-F2-4** UI: Low-stock badge on spool rows in `FilamentTypeCard`; color scale (amber ≤ threshold, red ≤ 10%)
+- [x] **T-F2-5** UI: Low-stock banner on dashboard when any spool is in critical state
+- [x] **T-F2-6** Unit tests for threshold trigger logic and badge rendering conditions
 
 ---
 
@@ -231,11 +231,11 @@ model FilamentSpool {
 - `src/app/(protected)/queue/components/FailureLogDialog.tsx`
 
 #### Tasks
-- [ ] **T-F3-1** API: Extend `PATCH /api/queue/[id]` to accept `FAILED` status + `failureReason`; add `createNotification()` trigger
-- [ ] **T-F3-2** UI: `FailureLogDialog` component with reason dropdown and notes field
-- [ ] **T-F3-3** UI: "Mark as Failed" action in job card dropdown; failed job visual styling (red accent, reason badge)
-- [ ] **T-F3-4** UI: Failure reason breakdown widget on analytics page (recharts PieChart, reuses F1 install)
-- [ ] **T-F3-5** Unit tests for failure API endpoint, dialog form validation, and notification trigger
+- [x] **T-F3-1** API: Extend `PATCH /api/queue/[id]` to accept `FAILED` status + `failureReason`; add `createNotification()` trigger
+- [x] **T-F3-2** UI: `FailureLogDialog` component with reason dropdown and notes field
+- [x] **T-F3-3** UI: "Mark as Failed" action in job card dropdown; failed job visual styling (red accent, reason badge)
+- [x] **T-F3-4** UI: Failure reason breakdown widget on analytics page (recharts PieChart, reuses F1 install)
+- [x] **T-F3-5** Unit tests for failure API endpoint, dialog form validation, and notification trigger
 
 ---
 
@@ -257,11 +257,11 @@ model FilamentSpool {
 - `src/app/(protected)/queue/components/ReprintConfirmDialog.tsx`
 
 #### Tasks
-- [ ] **T-F4-1** API: `GET /api/queue/history` — paginated history endpoint with filter params
-- [ ] **T-F4-2** API: `POST /api/queue/[id]/reprint` — clone job to QUEUED; validate original job exists and belongs to tenant
-- [ ] **T-F4-3** UI: History tab on queue page; `JobHistoryList` table with pagination
-- [ ] **T-F4-4** UI: Reprint button + `ReprintConfirmDialog`; optimistic update to active queue on success
-- [ ] **T-F4-5** Unit tests for history query (filtering, pagination) and reprint clone logic
+- [x] **T-F4-1** API: `GET /api/queue/history` — paginated history endpoint with filter params
+- [x] **T-F4-2** API: `POST /api/queue/[id]/reprint` — clone job to QUEUED; validate original job exists and belongs to tenant
+- [x] **T-F4-3** UI: History tab on queue page; `JobHistoryList` table with pagination
+- [x] **T-F4-4** UI: Reprint button + `ReprintConfirmDialog`; optimistic update to active queue on success
+- [x] **T-F4-5** Unit tests for history query (filtering, pagination) and reprint clone logic
 
 ---
 

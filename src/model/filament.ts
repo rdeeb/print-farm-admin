@@ -7,6 +7,7 @@ export interface FilamentSpool {
   remainingQuantity?: number | null
   landedCostTotal?: number | null
   remainingPercent: number
+  lowStockThreshold: number
   purchaseDate?: string | null
   notes?: string | null
   costPerKg?: number | null

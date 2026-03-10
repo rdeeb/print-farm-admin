@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import { apiError, apiSuccess } from '@/lib/api-response'
+import { createNotification } from '@/lib/notifications'
 
 export async function GET(
   request: NextRequest,
@@ -73,10 +74,22 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { weight, capacity, remainingPercent, landedCostTotal, purchaseDate, notes } = body
+    const { weight, capacity, remainingPercent, landedCostTotal, purchaseDate, notes, lowStockThreshold: rawThreshold } = body
+
+    // #7: Validate and clamp lowStockThreshold when explicitly provided
+    if (rawThreshold !== undefined && (typeof rawThreshold !== 'number' || !isFinite(rawThreshold))) {
+      return apiError('BAD_REQUEST', 'lowStockThreshold must be a finite number', 400)
+    }
+    const resolvedThreshold =
+      typeof rawThreshold === 'number' && isFinite(rawThreshold)
+        ? Math.min(100, Math.max(0, Math.round(rawThreshold)))
+        : existing.lowStockThreshold
 
     const normalizedCapacity = capacity ?? weight
     const remainingWeight = Math.round(normalizedCapacity * (remainingPercent / 100))
+
+    // #1: Capture pre-update value to detect threshold crossing
+    const previousRemainingPercent = existing.remainingPercent
 
     const spool = await prisma.filamentSpool.update({
       where: { id: params.id },
@@ -87,6 +100,7 @@ export async function PATCH(
         remainingQuantity: remainingWeight,
         landedCostTotal: typeof landedCostTotal === 'number' ? landedCostTotal : existing.landedCostTotal,
         remainingPercent,
+        lowStockThreshold: resolvedThreshold,
         purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
         notes: notes || null,
       },
@@ -99,6 +113,31 @@ export async function PATCH(
         },
       },
     })
+
+    // #1: Only notify when the spool crosses the threshold for the first time (was above, now at or below)
+    const wasAbove = previousRemainingPercent > resolvedThreshold
+    const isNowBelow = remainingPercent <= resolvedThreshold && remainingPercent > 0
+    if (wasAbove && isNowBelow) {
+      const tenantId = session.user.tenantId
+      const filamentLabel = [
+        spool.filament.brand,
+        spool.filament.type.code,
+        spool.filament.color.name,
+      ]
+        .filter(Boolean)
+        .join(' ')
+      // #13: Isolate notification errors — do not let them fail the spool update response
+      try {
+        await createNotification({
+          tenantId,
+          type: 'FILAMENT_LOW',
+          message: `${filamentLabel} spool is at ${remainingPercent}% remaining (threshold: ${resolvedThreshold}%).`,
+          dedupeKey: spool.id,
+        })
+      } catch (e) {
+        console.error('[F2] Notification failed for spool', spool.id, e)
+      }
+    }
 
     return apiSuccess(spool)
   } catch (error) {

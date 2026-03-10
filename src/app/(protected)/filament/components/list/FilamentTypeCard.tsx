@@ -38,10 +38,21 @@ export function FilamentTypeCard({
   onDeleteSpool,
 }: FilamentTypeCardProps) {
   const filamentSpools = filament.spools ?? []
-  const hasLowStock = filamentSpools.some((s) => s.remainingPercent < 20)
+  const hasCriticalStock = filamentSpools.some(
+    (s) => s.remainingPercent <= 10 && s.remainingPercent > 0
+  )
+  const hasLowStock = !hasCriticalStock && filamentSpools.some(
+    (s) => s.remainingPercent <= s.lowStockThreshold && s.remainingPercent > 0
+  )
+
+  const cardClassName = hasCriticalStock
+    ? 'border-red-300 bg-red-50'
+    : hasLowStock
+      ? 'border-yellow-300 bg-yellow-50'
+      : ''
 
   return (
-    <Card className={hasLowStock ? 'border-yellow-300' : ''}>
+    <Card className={cardClassName}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div
@@ -55,6 +66,9 @@ export function FilamentTypeCard({
             <div>
               <CardTitle className="text-lg flex items-center">
                 {filament.brand} {filament.type.code} - {filament.color.name}
+                {hasCriticalStock && (
+                  <AlertTriangle className="h-4 w-4 text-red-500 ml-2" />
+                )}
                 {hasLowStock && (
                   <AlertTriangle className="h-4 w-4 text-yellow-500 ml-2" />
                 )}

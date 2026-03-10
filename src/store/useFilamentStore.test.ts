@@ -7,6 +7,7 @@ const mockSpool = {
   weight: 1000,
   remainingWeight: 750,
   remainingPercent: 75,
+  lowStockThreshold: 20,
   costPerKg: 25.99,
   type: {
     id: 'type-1',
@@ -30,6 +31,7 @@ const mockSpool2 = {
   weight: 1000,
   remainingWeight: 500,
   remainingPercent: 50,
+  lowStockThreshold: 20,
   costPerKg: 22.99,
   type: {
     id: 'type-2',

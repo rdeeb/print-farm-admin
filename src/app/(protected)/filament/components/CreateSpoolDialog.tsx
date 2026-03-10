@@ -30,7 +30,7 @@ interface CreateSpoolDialogProps {
   onRemoveSpoolRow: (index: number) => void
   onUpdateSpoolRow: (
     index: number,
-    field: 'weight' | 'capacity' | 'remainingPercent' | 'landedCostTotal',
+    field: 'weight' | 'capacity' | 'remainingPercent' | 'landedCostTotal' | 'lowStockThreshold',
     value: string
   ) => void
   onSubmit: (e: React.FormEvent) => void
@@ -123,6 +123,23 @@ export function CreateSpoolDialog({
                         onUpdateSpoolRow(index, 'remainingPercent', e.target.value)
                       }
                       className="h-9"
+                    />
+                    <span className="ml-1 text-sm">%</span>
+                  </div>
+                </div>
+                <div className="w-24">
+                  <Label className="text-xs">Alert at</Label>
+                  <div className="flex items-center">
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={spool.lowStockThreshold}
+                      onChange={(e) =>
+                        onUpdateSpoolRow(index, 'lowStockThreshold', e.target.value)
+                      }
+                      className="h-9"
+                      title="Low-stock alert threshold (0–100%). Set to 0 to disable alerts."
                     />
                     <span className="ml-1 text-sm">%</span>
                   </div>

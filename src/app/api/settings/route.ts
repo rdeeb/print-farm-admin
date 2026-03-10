@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
       hardwareMultiplier,
       softExpensePostingMode,
       currency,
+      defaultLowStockThreshold,
     } = body
 
     const defaultPrintingDays = [
@@ -110,6 +111,17 @@ export async function POST(request: NextRequest) {
       ? printingDays.filter((day: string) => defaultPrintingDays.includes(day))
       : defaultPrintingDays
 
+    const toInt = (value: unknown, fallback: number) => {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return Math.round(value)
+      }
+      if (typeof value === 'string') {
+        const parsed = parseInt(value, 10)
+        return Number.isFinite(parsed) ? parsed : fallback
+      }
+      return fallback
+    }
+
     const settings = await prisma.tenantSettings.upsert({
       where: {
         tenantId: session.user.tenantId,
@@ -127,6 +139,7 @@ export async function POST(request: NextRequest) {
             ? 'POST_AS_EXPENSE'
             : 'SOFT_ONLY',
         currency: typeof currency === 'string' ? currency : 'USD',
+        defaultLowStockThreshold: Math.min(100, Math.max(0, toInt(defaultLowStockThreshold, 20))),
       },
       create: {
         tenantId: session.user.tenantId,
@@ -142,6 +155,7 @@ export async function POST(request: NextRequest) {
             ? 'POST_AS_EXPENSE'
             : 'SOFT_ONLY',
         currency: typeof currency === 'string' ? currency : 'USD',
+        defaultLowStockThreshold: Math.min(100, Math.max(0, toInt(defaultLowStockThreshold, 20))),
       },
     })
 

@@ -35,6 +35,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
             data.softExpensePostingMode === 'POST_AS_EXPENSE'
               ? 'POST_AS_EXPENSE'
               : 'SOFT_ONLY',
+          defaultLowStockThreshold:
+            typeof data.defaultLowStockThreshold === 'number'
+              ? data.defaultLowStockThreshold
+              : 20,
         })
       }
     } catch (error) {

@@ -17,6 +17,7 @@ const mockFilament: Filament = {
       weight: 1000,
       remainingWeight: 800,
       remainingPercent: 80,
+      lowStockThreshold: 20,
     },
   ],
   totalRemainingWeight: 800,

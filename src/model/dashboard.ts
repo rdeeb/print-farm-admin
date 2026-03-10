@@ -7,6 +7,7 @@ export interface DashboardStats {
   queuedJobs: number
   overdueOrders: number
   lowStockSpools: number
+  criticalStockSpools: number
   revenueThisWeek: number
   revenueThisMonth: number
   profitThisWeek: number

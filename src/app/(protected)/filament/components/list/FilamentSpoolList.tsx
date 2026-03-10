@@ -11,7 +11,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Trash2 } from 'lucide-react'
+import { AlertTriangle, Flame, Trash2 } from 'lucide-react'
 import type { FilamentSpool } from '@/model/filament'
 
 interface FilamentSpoolListProps {
@@ -37,7 +37,12 @@ export function FilamentSpoolList({
 
   return (
     <div className="space-y-2">
-      {spools.map((spool, index) => (
+      {spools.map((spool, index) => {
+        const threshold = spool.lowStockThreshold
+        const isCritical = spool.remainingPercent <= 10
+        const isLow = !isCritical && spool.remainingPercent <= threshold
+
+        return (
         <div
           key={spool.id}
           className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
@@ -50,17 +55,31 @@ export function FilamentSpoolList({
                 {spool.remainingWeight}g remaining ({spool.remainingPercent}%)
               </p>
             </div>
+            {isCritical && (
+              <Badge variant="destructive" className="flex items-center gap-1">
+                <Flame className="h-3 w-3" />
+                Critical
+              </Badge>
+            )}
+            {isLow && (
+              <Badge variant="warning" className="flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                Low Stock
+              </Badge>
+            )}
           </div>
           <div className="flex items-center space-x-4">
             <div className="w-24">
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
                   className={`h-2 rounded-full ${
-                    spool.remainingPercent < 20
+                    isCritical
                       ? 'bg-red-500'
-                      : spool.remainingPercent < 50
-                        ? 'bg-yellow-500'
-                        : 'bg-green-500'
+                      : isLow
+                        ? 'bg-amber-500'
+                        : spool.remainingPercent < 50
+                          ? 'bg-yellow-500'
+                          : 'bg-green-500'
                   }`}
                   style={{ width: `${spool.remainingPercent}%` }}
                 />
@@ -68,11 +87,13 @@ export function FilamentSpoolList({
             </div>
             <Badge
               variant={
-                spool.remainingPercent < 20
+                isCritical
                   ? 'destructive'
-                  : spool.remainingPercent < 50
+                  : isLow
                     ? 'warning'
-                    : 'success'
+                    : spool.remainingPercent < 50
+                      ? 'warning'
+                      : 'success'
               }
             >
               {spool.remainingPercent}%
@@ -105,7 +126,8 @@ export function FilamentSpoolList({
             )}
           </div>
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

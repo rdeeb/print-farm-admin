@@ -175,6 +175,7 @@ model FilamentSpool {
   remainingQuantity Float?
   landedCostTotal   Float?
   remainingPercent  Int // 0-100
+  lowStockThreshold Int       @default(20) // percentage (0-100); alert when remainingPercent <= this
   purchaseDate      DateTime?
   notes             String?
   filamentId        String
@@ -418,6 +419,7 @@ model PrintJob {
   estimatedTime Int? // minutes
   actualTime    Int? // minutes
   failureReason String?
+  failureNotes  String?
   notes         String?
 
   // Relationships
@@ -511,6 +513,7 @@ model TenantSettings {
   hardwareMultiplier         Float                  @default(1.0)
   softExpensePostingMode     SoftExpensePostingMode @default(SOFT_ONLY)
   currency                   String                 @default("USD")
+  defaultLowStockThreshold   Int                    @default(20) // default % threshold for new spools
   createdAt                  DateTime               @default(now())
   updatedAt                  DateTime               @updatedAt
 

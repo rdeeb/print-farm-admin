@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useSettings } from '@/components/providers/SettingsProvider'
 import { POPULAR_BRANDS } from '../constants'
 import type { Filament, FilamentSpool, FilamentType, FilamentColor } from '@/model/filament'
 
@@ -21,6 +22,7 @@ export interface SpoolRow {
   capacity: string
   landedCostTotal: string
   remainingPercent: string
+  lowStockThreshold: string
 }
 
 const initialFilamentForm: FilamentFormData = {
@@ -34,13 +36,16 @@ const initialFilamentForm: FilamentFormData = {
   notes: '',
 }
 
-const initialSpools: SpoolRow[] = [
-  { weight: '1000', capacity: '1000', landedCostTotal: '', remainingPercent: '100' },
+const makeInitialSpools = (defaultThreshold: number): SpoolRow[] => [
+  { weight: '1000', capacity: '1000', landedCostTotal: '', remainingPercent: '100', lowStockThreshold: String(defaultThreshold) },
 ]
 
 export function useFilament() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { settings } = useSettings()
+  // #3: Use the tenant's defaultLowStockThreshold (falls back to 20 if not set)
+  const defaultThreshold = settings.defaultLowStockThreshold ?? 20
 
   const [filaments, setFilaments] = useState<Filament[]>([])
   const [types, setTypes] = useState<FilamentType[]>([])
@@ -57,7 +62,7 @@ export function useFilament() {
   const [brandSearch, setBrandSearch] = useState('')
   const [showBrandSuggestions, setShowBrandSuggestions] = useState(false)
   const [filamentForm, setFilamentForm] = useState<FilamentFormData>(initialFilamentForm)
-  const [spoolsToAdd, setSpoolsToAdd] = useState<SpoolRow[]>(initialSpools)
+  const [spoolsToAdd, setSpoolsToAdd] = useState<SpoolRow[]>(() => makeInitialSpools(defaultThreshold))
 
   const hasAppliedUrlSync = useRef(false)
 
@@ -126,9 +131,9 @@ export function useFilament() {
   }, [])
 
   const resetSpoolsForm = useCallback(() => {
-    setSpoolsToAdd(initialSpools)
+    setSpoolsToAdd(makeInitialSpools(defaultThreshold))
     setSelectedFilament(null)
-  }, [])
+  }, [defaultThreshold])
 
   const handleCreateFilament = useCallback(
     async (e: React.FormEvent) => {
@@ -181,6 +186,7 @@ export function useFilament() {
           capacity: parseFloat(s.capacity || s.weight),
           landedCostTotal: s.landedCostTotal ? parseFloat(s.landedCostTotal) : undefined,
           remainingPercent: parseInt(s.remainingPercent),
+          lowStockThreshold: parseInt(s.lowStockThreshold || '20'),
         }))
         const response = await fetch(
           `/api/filament/filaments/${selectedFilament.id}/spools`,
@@ -245,9 +251,9 @@ export function useFilament() {
   const addSpoolRow = useCallback(() => {
     setSpoolsToAdd((prev) => [
       ...prev,
-      { weight: '1000', capacity: '1000', landedCostTotal: '', remainingPercent: '100' },
+      { weight: '1000', capacity: '1000', landedCostTotal: '', remainingPercent: '100', lowStockThreshold: String(defaultThreshold) },
     ])
-  }, [])
+  }, [defaultThreshold])
 
   const removeSpoolRow = useCallback((index: number) => {
     setSpoolsToAdd((prev) => prev.filter((_, i) => i !== index))
@@ -256,7 +262,7 @@ export function useFilament() {
   const updateSpoolRow = useCallback(
     (
       index: number,
-      field: 'weight' | 'capacity' | 'remainingPercent' | 'landedCostTotal',
+      field: 'weight' | 'capacity' | 'remainingPercent' | 'landedCostTotal' | 'lowStockThreshold',
       value: string
     ) => {
       setSpoolsToAdd((prev) => {
@@ -289,7 +295,7 @@ export function useFilament() {
       filament.color.name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesType = !filterType || filament.type.id === filterType
     const isLowStock =
-      (filament.spools ?? []).some((s) => s.remainingPercent < 20) ||
+      (filament.spools ?? []).some((s) => s.remainingPercent <= s.lowStockThreshold) ||
       (filament._count?.spools ?? 0) === 0
     const matchesLowStock = !lowStockOnly || isLowStock
     return matchesSearch && matchesType && matchesLowStock
@@ -305,7 +311,7 @@ export function useFilament() {
   )
   const lowStockFilaments = filaments.filter(
     (f) =>
-      (f.spools ?? []).some((s) => s.remainingPercent < 20) ||
+      (f.spools ?? []).some((s) => s.remainingPercent <= s.lowStockThreshold) ||
       (f._count?.spools ?? 0) === 0
   ).length
 

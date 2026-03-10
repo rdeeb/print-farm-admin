@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const [
       pendingOrders,
       totalFilament,
-      lowStockSpools,
+      spoolStockData,
       activePrinters,
       totalPrinters,
       completedJobsToday,
@@ -53,12 +53,10 @@ export async function GET(request: NextRequest) {
         _sum: { remainingWeight: true },
       }),
 
-      // Low stock spools (less than 20% but greater than 0% - exclude empty spools)
-      prisma.filamentSpool.count({
-        where: {
-          filament: { tenantId },
-          remainingPercent: { gt: 0, lt: 20 },
-        },
+      // #5: Fetch per-spool remainingPercent + lowStockThreshold for JS-side computation
+      prisma.filamentSpool.findMany({
+        where: { filament: { tenantId } },
+        select: { remainingPercent: true, lowStockThreshold: true },
       }),
 
       // Active printers (idle or printing)
@@ -158,6 +156,14 @@ export async function GET(request: NextRequest) {
         },
       }),
     ])
+
+    // #5: Compute stock alert counts using each spool's own threshold
+    const criticalStockSpools = spoolStockData.filter(
+      (s) => s.remainingPercent > 0 && s.remainingPercent <= 10
+    ).length
+    const lowStockSpools = spoolStockData.filter(
+      (s) => s.remainingPercent > 10 && s.remainingPercent <= s.lowStockThreshold
+    ).length
 
     // Transform orders by status to object
     const ordersBreakdown = ordersByStatus.reduce((acc, item) => {
@@ -267,6 +273,7 @@ export async function GET(request: NextRequest) {
       pendingOrders,
       totalFilament: totalFilament._sum.remainingWeight || 0,
       lowStockSpools,
+      criticalStockSpools,
       activePrinters,
       totalPrinters,
       completedJobsToday,

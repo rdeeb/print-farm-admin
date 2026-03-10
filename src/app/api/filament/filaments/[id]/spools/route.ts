@@ -45,7 +45,23 @@ export async function POST(
     }
 
     // Create all spools
-    const { currency } = await getTenantFinanceContext(session.user.tenantId)
+    const [{ currency }, tenantSettings] = await Promise.all([
+      getTenantFinanceContext(session.user.tenantId),
+      // #2: Fetch tenant's default low-stock threshold to use as fallback
+      prisma.tenantSettings.findUnique({
+        where: { tenantId: session.user.tenantId },
+        select: { defaultLowStockThreshold: true },
+      }),
+    ])
+    const tenantDefaultThreshold = tenantSettings?.defaultLowStockThreshold ?? 20
+
+    // #8: Helper to clamp and validate lowStockThreshold per spool
+    const clampThreshold = (raw: unknown, fallback: number): number => {
+      if (typeof raw === 'number' && isFinite(raw)) {
+        return Math.min(100, Math.max(0, Math.round(raw)))
+      }
+      return fallback
+    }
 
     const createdSpools = await prisma.$transaction(
       spools.map(
@@ -54,6 +70,7 @@ export async function POST(
           capacity?: number
           landedCostTotal?: number
           remainingPercent: number
+          lowStockThreshold?: number
           purchaseDate?: string
           notes?: string
         }) => {
@@ -74,6 +91,8 @@ export async function POST(
             remainingQuantity: remainingWeight,
             landedCostTotal,
             remainingPercent: spool.remainingPercent,
+            // #2/#8: Use per-spool value if provided, else tenant default, clamped 0-100
+            lowStockThreshold: clampThreshold(spool.lowStockThreshold, tenantDefaultThreshold),
             purchaseDate: spool.purchaseDate ? new Date(spool.purchaseDate) : null,
             notes: spool.notes || null,
             filamentId: params.id,

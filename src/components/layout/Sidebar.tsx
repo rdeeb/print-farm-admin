@@ -29,7 +29,7 @@ const navigation: NavigationItem[] = [
   { name: 'Projects', href: '/projects', icon: Box },
   { name: 'Print Queue', href: '/queue', icon: ListOrdered },
   { name: 'Printers', href: '/printers', icon: Printer },
-  { name: 'Filament', href: '/filament', icon: Package },
+  { name: 'Materials', href: '/filament', icon: Package },
   { name: 'Finance', href: '/finance', icon: Wallet },
   { name: 'Hardware', href: '/hardware', icon: Wrench },
   { name: 'Inventory', href: '/inventory', icon: Building2 },

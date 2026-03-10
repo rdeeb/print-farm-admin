@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function GET(
   request: NextRequest,
@@ -11,7 +12,7 @@ export async function GET(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     const spool = await prisma.filamentSpool.findFirst({
@@ -32,13 +33,13 @@ export async function GET(
     })
 
     if (!spool) {
-      return NextResponse.json({ error: 'Spool not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Spool not found', 404)
     }
 
-    return NextResponse.json(spool)
+    return apiSuccess(spool)
   } catch (error) {
     console.error('Error fetching spool:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
@@ -50,11 +51,11 @@ export async function PATCH(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     // Verify spool belongs to tenant
@@ -68,7 +69,7 @@ export async function PATCH(
     })
 
     if (!existing) {
-      return NextResponse.json({ error: 'Spool not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Spool not found', 404)
     }
 
     const body = await request.json()
@@ -99,10 +100,10 @@ export async function PATCH(
       },
     })
 
-    return NextResponse.json(spool)
+    return apiSuccess(spool)
   } catch (error) {
     console.error('Error updating spool:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
@@ -114,11 +115,11 @@ export async function DELETE(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     // Verify spool belongs to tenant
@@ -132,16 +133,16 @@ export async function DELETE(
     })
 
     if (!existing) {
-      return NextResponse.json({ error: 'Spool not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Spool not found', 404)
     }
 
     await prisma.filamentSpool.delete({
       where: { id: params.id },
     })
 
-    return NextResponse.json({ success: true })
+    return apiSuccess({ success: true })
   } catch (error) {
     console.error('Error deleting spool:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

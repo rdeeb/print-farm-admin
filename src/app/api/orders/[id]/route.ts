@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import { calculateProjectLandedCostById, getSoftExpenseAllocations } from '@/lib/production-utils'
 import { createLedgerEntry, getTenantFinanceContext } from '@/lib/finance-ledger'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function GET(
   request: NextRequest,
@@ -13,7 +14,7 @@ export async function GET(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     const order = await prisma.order.findFirst({
@@ -67,7 +68,7 @@ export async function GET(
     })
 
     if (!order) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Order not found', 404)
     }
 
     if (order.orderParts.length === 0 && order.project.parts.length > 0) {
@@ -125,7 +126,7 @@ export async function GET(
         },
       })
 
-      return NextResponse.json(refreshed)
+      return apiSuccess(refreshed)
     }
 
     // Get printer assignments from print jobs for QUEUED/PRINTING parts
@@ -148,7 +149,7 @@ export async function GET(
       printerId: printerByPart.get(op.partId) || null,
     }))
 
-    return NextResponse.json({
+    return apiSuccess({
       ...order,
       project: {
         id: order.project.id,
@@ -158,7 +159,7 @@ export async function GET(
     })
   } catch (error) {
     console.error('Error fetching order:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
@@ -170,19 +171,19 @@ export async function PATCH(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     const body = await request.json()
-    const { status, dueDate } = body
+    const { status, dueDate, filamentHandling } = body
     const hasDueDate = Object.prototype.hasOwnProperty.call(body, 'dueDate')
 
     if (!status && !hasDueDate) {
-      return NextResponse.json({ error: 'Status or due date is required' }, { status: 400 })
+      return apiError('BAD_REQUEST', 'Status or due date is required', 400)
     }
 
     const order = await prisma.order.findFirst({
@@ -207,26 +208,107 @@ export async function PATCH(
     })
 
     if (!order) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Order not found', 404)
     }
 
     if (status) {
+      if (status === 'CANCELLED' && ['DELIVERED', 'COMPLETED', 'CANCELLED'].includes(order.status)) {
+        return apiError('BAD_REQUEST', 'Cannot cancel an order that is already delivered or cancelled', 400)
+      }
+
       if (status === 'DELIVERED' && !['WAITING', 'ASSEMBLED'].includes(order.status)) {
-        return NextResponse.json(
-          { error: 'Order must be waiting for assembly before delivery' },
-          { status: 400 }
-        )
+        return apiError('BAD_REQUEST', 'Order must be waiting for assembly before delivery', 400)
       }
 
       if (status === 'WAITING' || status === 'ASSEMBLED') {
         const allPrinted = order.orderParts.every(part => part.status === 'PRINTED')
         if (!allPrinted) {
-          return NextResponse.json(
-            { error: 'All parts must be printed before waiting for assembly' },
-            { status: 400 }
-          )
+          return apiError('BAD_REQUEST', 'All parts must be printed before waiting for assembly', 400)
         }
       }
+    }
+
+    // Handle order cancellation cleanup
+    if (status === 'CANCELLED') {
+      await prisma.$transaction(async (tx) => {
+        // Find all active print jobs for this order
+        const printJobs = await tx.printJob.findMany({
+          where: {
+            orderId: params.id,
+            status: { in: ['QUEUED', 'PRINTING'] },
+          },
+          include: {
+            printer: true,
+            spool: true,
+            part: true,
+          },
+        })
+
+        // Cancel all queued and printing jobs
+        for (const job of printJobs) {
+          // Cancel the print job
+          await tx.printJob.update({
+            where: { id: job.id },
+            data: { status: 'CANCELLED' },
+          })
+
+          // If the job was printing, reset the printer to IDLE
+          if (job.status === 'PRINTING' && job.printer) {
+            await tx.printer.update({
+              where: { id: job.printer.id },
+              data: { status: 'IDLE' },
+            })
+
+            // Note: Filament is only deducted when marking as PRINTED, not when PRINTING starts
+            // So for PRINTING jobs, no filament inventory adjustment is needed
+            // However, we track the cancellation event for cost accounting
+
+            if (job.spool && filamentHandling === 'MARK_AS_WASTE') {
+              // Track the planned filament usage as waste/lost opportunity cost
+              const filamentWeight = job.part.filamentWeight || 0
+              const { currency } = await getTenantFinanceContext(session.user.tenantId)
+
+              // Calculate cost per gram from landed cost total
+              const costPerGram = job.spool.weight > 0
+                ? (job.spool.landedCostTotal || 0) / job.spool.weight
+                : 0
+              const wasteCost = costPerGram * filamentWeight
+
+              await createLedgerEntry({
+                tenantId: session.user.tenantId,
+                amount: wasteCost,
+                type: 'SOFT_EXPENSE',
+                source: 'MATERIAL_WASTE',
+                currency,
+                isNonCash: true,
+                orderId: order.id,
+                projectId: order.project.id,
+                autoKey: `order-cancel-waste-${job.id}`,
+                note: `Planned material usage from cancelled print job for order ${order.orderNumber}`,
+                metadata: {
+                  category: 'waste',
+                  printJobId: job.id,
+                  filamentWeight,
+                  type: 'opportunity_cost',
+                },
+              })
+            }
+            // For RETURN_TO_INVENTORY: No action needed since filament was never deducted
+          }
+        }
+
+        // Reset order parts to WAITING status (except for PRINTED parts)
+        await tx.orderPart.updateMany({
+          where: {
+            orderId: params.id,
+            status: { in: ['QUEUED', 'PRINTING'] },
+          },
+          data: {
+            status: 'WAITING',
+            filamentId: null,
+          },
+        })
+      })
     }
 
     const data: { status?: typeof status; dueDate?: Date | null } = {}
@@ -314,9 +396,9 @@ export async function PATCH(
       }
     }
 
-    return NextResponse.json(updated)
+    return apiSuccess(updated)
   } catch (error) {
     console.error('Error updating order:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

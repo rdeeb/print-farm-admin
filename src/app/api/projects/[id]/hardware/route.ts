@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function GET(
   request: NextRequest,
@@ -11,7 +12,7 @@ export async function GET(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     // Verify project belongs to tenant
@@ -23,7 +24,7 @@ export async function GET(
     })
 
     if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Project not found', 404)
     }
 
     const projectHardware = await prisma.projectHardware.findMany({
@@ -40,10 +41,10 @@ export async function GET(
       },
     })
 
-    return NextResponse.json(projectHardware)
+    return apiSuccess(projectHardware)
   } catch (error) {
     console.error('Error fetching project hardware:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
@@ -55,11 +56,11 @@ export async function POST(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     // Verify project belongs to tenant
@@ -71,14 +72,14 @@ export async function POST(
     })
 
     if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Project not found', 404)
     }
 
     const body = await request.json()
     const { hardwareId, quantity } = body
 
     if (!hardwareId || quantity === undefined) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+      return apiError('BAD_REQUEST', 'Missing required fields', 400)
     }
 
     // Verify hardware belongs to tenant
@@ -90,7 +91,7 @@ export async function POST(
     })
 
     if (!hardware) {
-      return NextResponse.json({ error: 'Hardware not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Hardware not found', 404)
     }
 
     // Check if already exists
@@ -108,7 +109,7 @@ export async function POST(
         data: { quantity: parseFloat(quantity) },
         include: { hardware: true },
       })
-      return NextResponse.json(updated)
+      return apiSuccess(updated)
     }
 
     const projectHardware = await prisma.projectHardware.create({
@@ -122,9 +123,9 @@ export async function POST(
       },
     })
 
-    return NextResponse.json(projectHardware, { status: 201 })
+    return apiSuccess(projectHardware, 201)
   } catch (error) {
     console.error('Error adding hardware to project:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

@@ -120,7 +120,7 @@ export function AddPartDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Filament Type</Label>
+            <Label>Material Type</Label>
             <Select
               value={partForm.filamentTypeId || 'none'}
               onValueChange={(value) => {
@@ -132,7 +132,7 @@ export function AddPartDialog({
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No filament requirement</SelectItem>
+                <SelectItem value="none">No material requirement</SelectItem>
                 {types.map((type) => (
                   <SelectItem key={type.id} value={type.id}>
                     {type.name} ({type.code})

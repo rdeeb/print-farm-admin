@@ -1,14 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     const tenantId = session.user.tenantId
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
       ? Math.round((printingPrinters / activePrinters) * 100)
       : 0
 
-    return NextResponse.json({
+    return apiSuccess({
       totalOrders,
       completedOrders,
       totalPrintJobs,
@@ -74,6 +75,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error fetching analytics:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

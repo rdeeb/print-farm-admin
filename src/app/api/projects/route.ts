@@ -1,14 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     const projects = await prisma.project.findMany({
@@ -28,10 +29,10 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(projects)
+    return apiSuccess(projects)
   } catch (error) {
     console.error('Error fetching projects:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
@@ -40,11 +41,11 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     const body = await request.json()
@@ -67,9 +68,9 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(project, { status: 201 })
+    return apiSuccess(project, 201)
   } catch (error) {
     console.error('Error creating project:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

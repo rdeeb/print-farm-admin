@@ -1,15 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import { calculateSuggestedDueDate } from '@/lib/production-utils'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     const { searchParams } = new URL(request.url)
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
     const quantity = parseInt(searchParams.get('quantity') || '1')
 
     if (!projectId) {
-      return NextResponse.json({ error: 'Project ID is required' }, { status: 400 })
+      return apiError('BAD_REQUEST', 'Project ID is required', 400)
     }
 
     // Calculate total print time for the project
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
     })
 
     if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Project not found', 404)
     }
 
     const totalPrintTimePerProject = project.parts.reduce((acc, part) => {
@@ -51,9 +52,9 @@ export async function GET(request: NextRequest) {
       totalAdditionalMinutes
     )
 
-    return NextResponse.json({ suggestedDueDate })
+    return apiSuccess({ suggestedDueDate })
   } catch (error) {
     console.error('Error suggesting due date:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

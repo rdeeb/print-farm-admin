@@ -59,7 +59,7 @@ describe('Header', () => {
     if (notificationButton) {
       await user.click(notificationButton)
       expect(screen.getByText('Notifications')).toBeInTheDocument()
-      expect(screen.getByText('Low filament stock')).toBeInTheDocument()
+      expect(screen.getByText('Low material stock')).toBeInTheDocument()
       expect(screen.getByText('Print job completed')).toBeInTheDocument()
       expect(screen.getByText('Printer maintenance due')).toBeInTheDocument()
     }
@@ -109,7 +109,7 @@ describe('Header', () => {
       await user.click(notificationButton)
 
       // Check that notifications are displayed
-      expect(screen.getByText('Low filament stock')).toBeInTheDocument()
+      expect(screen.getByText('Low material stock')).toBeInTheDocument()
       expect(screen.getByText('Print job completed')).toBeInTheDocument()
       expect(screen.getByText('Printer maintenance due')).toBeInTheDocument()
     }

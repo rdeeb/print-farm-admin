@@ -1,15 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import { calculateSuggestedDueDate } from '@/lib/production-utils'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     const orders = await prisma.order.findMany({
@@ -55,10 +56,10 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json(ordersWithProgress)
+    return apiSuccess(ordersWithProgress)
   } catch (error) {
     console.error('Error fetching orders:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
@@ -67,18 +68,18 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     const body = await request.json()
     const { projectId, quantity, priority, dueDate, clientId, notes } = body
 
     if (!clientId) {
-      return NextResponse.json({ error: 'Client is required' }, { status: 400 })
+      return apiError('BAD_REQUEST', 'Client is required', 400)
     }
 
     // Verify client belongs to tenant
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!client) {
-      return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Client not found', 404)
     }
 
     // Generate order number
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Project not found', 404)
     }
 
     const orderParts = project.parts.map(part => ({
@@ -158,9 +159,9 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(order, { status: 201 })
+    return apiSuccess(order, 201)
   } catch (error) {
     console.error('Error creating order:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

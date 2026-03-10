@@ -22,7 +22,7 @@ interface HeaderProps {
 export function Header({ onMenuClick }: HeaderProps) {
   const { data: session } = useSession()
   const [notifications] = useState([
-    { id: '1', title: 'Low filament stock', type: 'warning', unread: true },
+    { id: '1', title: 'Low material stock', type: 'warning', unread: true },
     { id: '2', title: 'Print job completed', type: 'success', unread: true },
     { id: '3', title: 'Printer maintenance due', type: 'error', unread: false },
   ])

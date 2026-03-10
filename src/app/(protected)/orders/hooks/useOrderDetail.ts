@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import type { Order, OrderPart, OrderFilament } from '@/model/order'
 import type { Printer } from '@/model/printer'
+import type { FilamentHandling } from '../components/detail/CancelOrderDialog'
 
 export interface SelectedOption {
   filament: OrderFilament
@@ -29,6 +30,8 @@ export function useOrderDetail(orderId: string) {
   const [selectedPrinterId, setSelectedPrinterId] = useState('')
   const [editingQuantityId, setEditingQuantityId] = useState<string | null>(null)
   const [quantityForm, setQuantityForm] = useState('')
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+  const [filamentHandling, setFilamentHandling] = useState<FilamentHandling>('MARK_AS_WASTE')
 
   const canEdit = session?.user?.role !== 'VIEWER'
 
@@ -105,6 +108,10 @@ export function useOrderDetail(orderId: string) {
         p.status !== 'MAINTENANCE'
     )
   }, [printers])
+
+  const hasPrintingParts = useMemo(() => {
+    return order?.orderParts?.some((part) => part.status === 'PRINTING') ?? false
+  }, [order])
 
   const getDefaultPrinter = useCallback(
     (orderPart: OrderPart): string => {
@@ -346,6 +353,34 @@ export function useOrderDetail(orderId: string) {
     setDueDateForm(order?.dueDate ? new Date(order.dueDate).toISOString().split('T')[0] : '')
   }, [order?.dueDate])
 
+  const cancelOrder = useCallback(async () => {
+    if (!order) return
+    setIsSaving(true)
+    try {
+      const response = await fetch(`/api/orders/${order.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'CANCELLED',
+          filamentHandling: filamentHandling,
+        }),
+      })
+
+      if (response.ok) {
+        await fetchData()
+        setCancelDialogOpen(false)
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Failed to cancel order')
+      }
+    } catch (error) {
+      console.error('Error canceling order:', error)
+      alert('Failed to cancel order')
+    } finally {
+      setIsSaving(false)
+    }
+  }, [order, filamentHandling, fetchData])
+
   return {
     order,
     filaments,
@@ -361,6 +396,9 @@ export function useOrderDetail(orderId: string) {
     selectedPrinterId,
     editingQuantityId,
     quantityForm,
+    cancelDialogOpen,
+    filamentHandling,
+    hasPrintingParts,
     selectedOptions,
     availablePrinters,
     activePrinters,
@@ -371,6 +409,8 @@ export function useOrderDetail(orderId: string) {
     setQuantityForm,
     setSelectedFilamentId,
     setSelectedPrinterId,
+    setCancelDialogOpen,
+    setFilamentHandling,
     fetchData,
     handleStartPrinting,
     handleEditQuantity,
@@ -382,5 +422,6 @@ export function useOrderDetail(orderId: string) {
     markDelivered,
     handleSaveDueDate,
     handleCancelDueDateEdit,
+    cancelOrder,
   }
 }

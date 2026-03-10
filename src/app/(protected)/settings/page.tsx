@@ -382,7 +382,7 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="filamentMultiplier">Filament Multiplier</Label>
+            <Label htmlFor="filamentMultiplier">Material Multiplier</Label>
             <Input
               id="filamentMultiplier"
               type="number"

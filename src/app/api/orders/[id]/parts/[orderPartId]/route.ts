@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function PATCH(
   request: NextRequest,
@@ -11,11 +12,11 @@ export async function PATCH(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     const body = await request.json()
@@ -50,20 +51,17 @@ export async function PATCH(
     })
 
     if (!orderPart) {
-      return NextResponse.json({ error: 'Order part not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Order part not found', 404)
     }
 
     if (quantity !== undefined) {
       const nextQuantity = Number(quantity)
       if (!Number.isInteger(nextQuantity) || nextQuantity < 1) {
-        return NextResponse.json({ error: 'Quantity must be a whole number greater than 0' }, { status: 400 })
+        return apiError('BAD_REQUEST', 'Quantity must be a whole number greater than 0', 400)
       }
 
       if (orderPart.status !== 'WAITING') {
-        return NextResponse.json(
-          { error: 'Quantity can only be updated while the part is waiting' },
-          { status: 400 }
-        )
+        return apiError('BAD_REQUEST', 'Quantity can only be updated while the part is waiting', 400)
       }
 
       const updatedOrderPart = await prisma.orderPart.update({
@@ -88,25 +86,25 @@ export async function PATCH(
         },
       })
 
-      return NextResponse.json(updatedOrderPart)
+      return apiSuccess(updatedOrderPart)
     }
 
     // Handle QUEUED status - queue a part for printing when printer is busy
     if (status === 'QUEUED') {
       if (orderPart.status !== 'WAITING') {
-        return NextResponse.json({ error: 'Part is already in progress or queued' }, { status: 400 })
+        return apiError('BAD_REQUEST', 'Part is already in progress or queued', 400)
       }
 
       if (!printerId) {
-        return NextResponse.json({ error: 'Printer selection is required' }, { status: 400 })
+        return apiError('BAD_REQUEST', 'Printer selection is required', 400)
       }
 
       if (!filamentId) {
-        return NextResponse.json({ error: 'Filament selection is required' }, { status: 400 })
+        return apiError('BAD_REQUEST', 'Material selection is required', 400)
       }
 
       if (!orderPart.part.filamentColor) {
-        return NextResponse.json({ error: 'Part has no filament requirement' }, { status: 400 })
+        return apiError('BAD_REQUEST', 'Part has no filament requirement', 400)
       }
 
       // Verify printer exists and is active (doesn't need to be IDLE for queueing)
@@ -119,7 +117,7 @@ export async function PATCH(
       })
 
       if (!printer) {
-        return NextResponse.json({ error: 'Printer not found or not active' }, { status: 400 })
+        return apiError('BAD_REQUEST', 'Printer not found or not active', 400)
       }
 
       const filament = await prisma.filament.findFirst({
@@ -137,7 +135,7 @@ export async function PATCH(
       })
 
       if (!filament) {
-        return NextResponse.json({ error: 'Filament not available for this part' }, { status: 400 })
+        return apiError('BAD_REQUEST', 'Filament not available for this part', 400)
       }
 
       const requiredWeight =
@@ -148,10 +146,7 @@ export async function PATCH(
       )
 
       if (totalRemainingWeight < requiredWeight) {
-        return NextResponse.json(
-          { error: 'Not enough filament remaining for this part' },
-          { status: 400 }
-        )
+        return apiError('BAD_REQUEST', 'Not enough filament remaining for this part', 400)
       }
 
       const spoolToUse =
@@ -214,25 +209,25 @@ export async function PATCH(
         return updatedOrderPart
       })
 
-      return NextResponse.json(updated)
+      return apiSuccess(updated)
     }
 
     // Handle PRINTING status - start printing immediately (printer must be IDLE)
     if (status === 'PRINTING') {
       if (orderPart.status !== 'WAITING' && orderPart.status !== 'QUEUED') {
-        return NextResponse.json({ error: 'Part is already printing or printed' }, { status: 400 })
+        return apiError('BAD_REQUEST', 'Part is already printing or printed', 400)
       }
 
       if (!printerId) {
-        return NextResponse.json({ error: 'Printer selection is required to start printing' }, { status: 400 })
+        return apiError('BAD_REQUEST', 'Printer selection is required to start printing', 400)
       }
 
       if (!filamentId) {
-        return NextResponse.json({ error: 'Filament selection is required' }, { status: 400 })
+        return apiError('BAD_REQUEST', 'Material selection is required', 400)
       }
 
       if (!orderPart.part.filamentColor) {
-        return NextResponse.json({ error: 'Part has no filament requirement' }, { status: 400 })
+        return apiError('BAD_REQUEST', 'Part has no filament requirement', 400)
       }
 
       // Verify printer exists and is available
@@ -245,11 +240,11 @@ export async function PATCH(
       })
 
       if (!printer) {
-        return NextResponse.json({ error: 'Printer not found or not available' }, { status: 400 })
+        return apiError('BAD_REQUEST', 'Printer not found or not available', 400)
       }
 
       if (printer.status !== 'IDLE') {
-        return NextResponse.json({ error: 'Printer is not available (must be IDLE)' }, { status: 400 })
+        return apiError('BAD_REQUEST', 'Printer is not available (must be IDLE)', 400)
       }
 
       const filament = await prisma.filament.findFirst({
@@ -267,7 +262,7 @@ export async function PATCH(
       })
 
       if (!filament) {
-        return NextResponse.json({ error: 'Filament not available for this part' }, { status: 400 })
+        return apiError('BAD_REQUEST', 'Filament not available for this part', 400)
       }
 
       const requiredWeight =
@@ -278,10 +273,7 @@ export async function PATCH(
       )
 
       if (totalRemainingWeight < requiredWeight) {
-        return NextResponse.json(
-          { error: 'Not enough filament remaining for this part' },
-          { status: 400 }
-        )
+        return apiError('BAD_REQUEST', 'Not enough filament remaining for this part', 400)
       }
 
       // Find the best spool to use (one with most remaining that can cover the job)
@@ -375,16 +367,16 @@ export async function PATCH(
         return updatedOrderPart
       })
 
-      return NextResponse.json(updated)
+      return apiSuccess(updated)
     }
 
     if (status === 'PRINTED') {
       if (orderPart.status !== 'PRINTING') {
-        return NextResponse.json({ error: 'Part must be printing first' }, { status: 400 })
+        return apiError('BAD_REQUEST', 'Part must be printing first', 400)
       }
 
       if (!orderPart.filamentId) {
-        return NextResponse.json({ error: 'No filament selected for this part' }, { status: 400 })
+        return apiError('BAD_REQUEST', 'No material selected for this part', 400)
       }
 
       const result = await prisma.$transaction(async tx => {
@@ -525,12 +517,12 @@ export async function PATCH(
         return updatedOrderPart
       })
 
-      return NextResponse.json(result)
+      return apiSuccess(result)
     }
 
-    return NextResponse.json({ error: 'Invalid status update' }, { status: 400 })
+    return apiError('BAD_REQUEST', 'Invalid status update', 400)
   } catch (error) {
     console.error('Error updating order part:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

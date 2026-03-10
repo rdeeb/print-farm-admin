@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useSettings } from '@/components/providers/SettingsProvider'
 import { FilamentPageHeader } from './components/list/FilamentPageHeader'
@@ -60,6 +61,12 @@ export default function FilamentPage() {
 
   const canEdit = session?.user?.role !== 'VIEWER'
 
+  // Types filtered by selected technology for the create material form
+  const typesForForm = useMemo(
+    () => types.filter((t) => t.technology === filamentForm.technology),
+    [types, filamentForm.technology]
+  )
+
   if (isLoading) {
     return <FilamentLoadingState />
   }
@@ -78,7 +85,7 @@ export default function FilamentPage() {
         onShowBrandSuggestionsChange={setShowBrandSuggestions}
         brandSuggestions={brandSuggestions}
         onBrandSelect={handleBrandSelect}
-        types={types}
+        types={typesForForm}
         filteredColors={colors}
         onSubmit={handleCreateFilament}
         onReset={resetFilamentForm}

@@ -59,8 +59,8 @@ export function PrintSelectionDialog({
           </DialogTitle>
           <DialogDescription>
             {isSelectedPrinterAvailable
-              ? 'Select a printer and filament to start this print job'
-              : 'Select a printer and filament to queue this print job'}
+              ? 'Select a printer and material to start this print job'
+              : 'Select a printer and material to queue this print job'}
           </DialogDescription>
         </DialogHeader>
         {selectedOrderPart?.part.filamentColor ? (
@@ -115,10 +115,10 @@ export function PrintSelectionDialog({
             </div>
 
             <div className="space-y-2">
-              <Label>Filament *</Label>
+              <Label>Material *</Label>
               <Select value={selectedFilamentId} onValueChange={onFilamentChange}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select filament" />
+                  <SelectValue placeholder="Select material" />
                 </SelectTrigger>
                 <SelectContent>
                   {selectedOptions.length > 0 ? (
@@ -144,7 +144,7 @@ export function PrintSelectionDialog({
                     ))
                   ) : (
                     <SelectItem value="none" disabled>
-                      No matching filament in stock
+                      No matching material in stock
                     </SelectItem>
                   )}
                 </SelectContent>
@@ -170,7 +170,7 @@ export function PrintSelectionDialog({
             </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-500">No filament requirement set for this part.</p>
+          <p className="text-sm text-gray-500">No material requirement set for this part.</p>
         )}
       </DialogContent>
     </Dialog>

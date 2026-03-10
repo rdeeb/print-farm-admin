@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function GET(
   request: NextRequest,
@@ -10,7 +11,7 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     const material = await prisma.filament.findFirst({
@@ -23,16 +24,16 @@ export async function GET(
     })
 
     if (!material) {
-      return NextResponse.json({ error: 'Material not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Material not found', 404)
     }
 
-    return NextResponse.json({
+    return apiSuccess({
       ...material,
       containers: material.spools,
     })
   } catch (error) {
     console.error('Material GET error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
@@ -43,10 +44,10 @@ export async function PATCH(
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     const body = await request.json()
@@ -65,9 +66,9 @@ export async function PATCH(
       },
     })
 
-    return NextResponse.json(material)
+    return apiSuccess(material)
   } catch (error) {
     console.error('Material PATCH error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

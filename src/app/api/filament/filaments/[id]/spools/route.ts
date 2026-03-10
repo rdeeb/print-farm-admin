@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import { createLedgerEntry, getTenantFinanceContext } from '@/lib/finance-ledger'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function POST(
   request: NextRequest,
@@ -12,11 +13,11 @@ export async function POST(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     // Verify filament belongs to tenant
@@ -33,14 +34,14 @@ export async function POST(
     })
 
     if (!filament) {
-      return NextResponse.json({ error: 'Filament not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Filament not found', 404)
     }
 
     const body = await request.json()
     const { spools } = body // Array of { weight, remainingPercent, purchaseDate?, notes? }
 
     if (!Array.isArray(spools) || spools.length === 0) {
-      return NextResponse.json({ error: 'At least one spool is required' }, { status: 400 })
+      return apiError('BAD_REQUEST', 'At least one spool is required', 400)
     }
 
     // Create all spools
@@ -97,9 +98,9 @@ export async function POST(
       )
     )
 
-    return NextResponse.json(createdSpools, { status: 201 })
+    return apiSuccess(createdSpools, 201)
   } catch (error) {
     console.error('Error creating spools:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

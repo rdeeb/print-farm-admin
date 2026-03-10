@@ -61,7 +61,7 @@ export function PartListItem({
               </span>
             </div>
           ) : (
-            <p className="text-xs text-gray-400 mt-2">No filament requirement set</p>
+            <p className="text-xs text-gray-400 mt-2">No material requirement set</p>
           )}
           {requirement && (
             <div className="mt-2 text-xs text-gray-500">

@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function GET(
   request: NextRequest,
@@ -11,7 +12,7 @@ export async function GET(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     const hardware = await prisma.hardware.findFirst({
@@ -29,13 +30,13 @@ export async function GET(
     })
 
     if (!hardware) {
-      return NextResponse.json({ error: 'Hardware not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Hardware not found', 404)
     }
 
-    return NextResponse.json(hardware)
+    return apiSuccess(hardware)
   } catch (error) {
     console.error('Error fetching hardware:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
@@ -47,11 +48,11 @@ export async function PATCH(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     // Verify hardware belongs to tenant
@@ -63,7 +64,7 @@ export async function PATCH(
     })
 
     if (!existing) {
-      return NextResponse.json({ error: 'Hardware not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Hardware not found', 404)
     }
 
     const body = await request.json()
@@ -87,10 +88,10 @@ export async function PATCH(
       },
     })
 
-    return NextResponse.json(hardware)
+    return apiSuccess(hardware)
   } catch (error) {
     console.error('Error updating hardware:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
@@ -102,11 +103,11 @@ export async function DELETE(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     // Verify hardware belongs to tenant
@@ -118,16 +119,16 @@ export async function DELETE(
     })
 
     if (!existing) {
-      return NextResponse.json({ error: 'Hardware not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Hardware not found', 404)
     }
 
     await prisma.hardware.delete({
       where: { id: params.id },
     })
 
-    return NextResponse.json({ success: true })
+    return apiSuccess({ success: true })
   } catch (error) {
     console.error('Error deleting hardware:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

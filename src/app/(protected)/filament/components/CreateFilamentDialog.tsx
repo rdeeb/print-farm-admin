@@ -60,13 +60,13 @@ export function CreateFilamentDialog({
       <DialogTrigger asChild>
         <Button>
           <Plus className="h-4 w-4 mr-2" />
-          Add Filament
+          Add Material
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Filament</DialogTitle>
-          <DialogDescription>Define a filament by brand, type, and color</DialogDescription>
+          <DialogTitle>Add New Material</DialogTitle>
+          <DialogDescription>Define a material by brand, type, and color</DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2 relative">
@@ -105,7 +105,12 @@ export function CreateFilamentDialog({
             <Select
               value={filamentForm.technology}
               onValueChange={(value: 'FDM' | 'SLA' | 'SLS') =>
-                onFilamentFormChange({ ...filamentForm, technology: value })
+                onFilamentFormChange({
+                  ...filamentForm,
+                  technology: value,
+                  typeId: '',
+                  colorId: '',
+                })
               }
             >
               <SelectTrigger>
@@ -120,7 +125,7 @@ export function CreateFilamentDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Filament Type</Label>
+            <Label>Material Type</Label>
             <Select
               value={filamentForm.typeId}
               onValueChange={(value) =>

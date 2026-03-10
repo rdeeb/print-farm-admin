@@ -38,7 +38,7 @@ export function ProjectCostCard({
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           <div>
-            <p className="text-sm text-gray-500">Filament</p>
+            <p className="text-sm text-gray-500">Material</p>
             <p className="text-lg font-semibold">{formatCurrency(cost.filamentCost, currency)}</p>
           </div>
           <div>

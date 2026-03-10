@@ -1,14 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     const { searchParams } = new URL(request.url)
@@ -37,10 +38,10 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(clients)
+    return apiSuccess(clients)
   } catch (error) {
     console.error('Error fetching clients:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
@@ -49,18 +50,18 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     const body = await request.json()
     const { name, phone, email, source, address, notes } = body
 
     if (!name) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+      return apiError('BAD_REQUEST', 'Name is required', 400)
     }
 
     // Check if client with same email already exists for this tenant
@@ -73,10 +74,7 @@ export async function POST(request: NextRequest) {
       })
 
       if (existing) {
-        return NextResponse.json(
-          { error: 'A client with this email already exists' },
-          { status: 409 }
-        )
+        return apiError('CONFLICT', 'A client with this email already exists', 409)
       }
     }
 
@@ -99,9 +97,9 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(client, { status: 201 })
+    return apiSuccess(client, 201)
   } catch (error) {
     console.error('Error creating client:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

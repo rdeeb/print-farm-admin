@@ -20,7 +20,15 @@
       "Bash(powershell.exe -Command \"npx tsc --noEmit 2>&1 | Select-String -Pattern ''filament'' -Context 0,5\")",
       "Bash(npm run db:generate:*)",
       "Bash(npm run db:push:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(cat *)",
+      "Bash(cat '/c/Users/rdeeb/Development/3d-farm-admin/src/app/\\(protected\\)/filament/page.tsx')",
+      "Bash(cat '/c/Users/rdeeb/Development/3d-farm-admin/src/app/\\(protected\\)/projects/page.tsx')",
+      "Bash(cat '/c/Users/rdeeb/Development/3d-farm-admin/src/app/\\(protected\\)/calendar/page.tsx')",
+      "WebSearch",
+      "Bash(powershell -c \"[console]::beep\\(880,200\\); [console]::beep\\(1100,300\\)\")",
+      "Bash(ls -la /c/Users/rdeeb/Development/3d-farm-admin/src/app/\\\\\\(protected\\\\\\)/ | head -20)",
+      "Bash(grep -r \"email\\\\|nodemailer\\\\|resend\\\\|sendgrid\\\\|smtp\" /c/Users/rdeeb/Development/3d-farm-admin/package.json /c/Users/rdeeb/Development/3d-farm-admin/src/lib/ --include=\"*.ts\" --include=\"*.json\" 2>/dev/null | head -20)"
     ]
   }
 }

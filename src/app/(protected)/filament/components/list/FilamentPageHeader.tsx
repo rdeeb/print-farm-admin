@@ -45,9 +45,9 @@ export function FilamentPageHeader({
   return (
     <div className="flex justify-between items-center">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Filament Inventory</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Materials Inventory</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Manage your filament types and track spool inventory
+          Manage your materials and track spool inventory
         </p>
       </div>
 

@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { createLedgerEntry, getTenantFinanceContext } from '@/lib/finance-ledger'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function POST(
   request: NextRequest,
@@ -11,10 +12,10 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     const material = await prisma.filament.findFirst({
@@ -22,14 +23,14 @@ export async function POST(
       select: { id: true, baseLandedCostPerUnit: true },
     })
     if (!material) {
-      return NextResponse.json({ error: 'Material not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Material not found', 404)
     }
 
     const { currency } = await getTenantFinanceContext(session.user.tenantId)
     const body = await request.json()
     const containers = Array.isArray(body.containers) ? body.containers : []
     if (containers.length === 0) {
-      return NextResponse.json({ error: 'At least one container is required' }, { status: 400 })
+      return apiError('BAD_REQUEST', 'At least one container is required', 400)
     }
 
     const created = await prisma.$transaction(
@@ -76,9 +77,9 @@ export async function POST(
       )
     )
 
-    return NextResponse.json(created, { status: 201 })
+    return apiSuccess(created, 201)
   } catch (error) {
     console.error('Material containers POST error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function GET(
   request: NextRequest,
@@ -11,7 +12,7 @@ export async function GET(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     const client = await prisma.client.findFirst({
@@ -38,13 +39,13 @@ export async function GET(
     })
 
     if (!client) {
-      return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Client not found', 404)
     }
 
-    return NextResponse.json(client)
+    return apiSuccess(client)
   } catch (error) {
     console.error('Error fetching client:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
@@ -56,11 +57,11 @@ export async function PATCH(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     // Verify client belongs to tenant
@@ -72,7 +73,7 @@ export async function PATCH(
     })
 
     if (!existing) {
-      return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Client not found', 404)
     }
 
     const body = await request.json()
@@ -89,10 +90,7 @@ export async function PATCH(
       })
 
       if (conflict) {
-        return NextResponse.json(
-          { error: 'A client with this email already exists' },
-          { status: 409 }
-        )
+        return apiError('CONFLICT', 'A client with this email already exists', 409)
       }
     }
 
@@ -115,10 +113,10 @@ export async function PATCH(
       },
     })
 
-    return NextResponse.json(client)
+    return apiSuccess(client)
   } catch (error) {
     console.error('Error updating client:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
@@ -130,11 +128,11 @@ export async function DELETE(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     if (session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     // Verify client belongs to tenant
@@ -151,24 +149,21 @@ export async function DELETE(
     })
 
     if (!existing) {
-      return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Client not found', 404)
     }
 
     // Prevent deletion if client has orders
     if (existing._count.orders > 0) {
-      return NextResponse.json(
-        { error: 'Cannot delete client with existing orders' },
-        { status: 400 }
-      )
+      return apiError('BAD_REQUEST', 'Cannot delete client with existing orders', 400)
     }
 
     await prisma.client.delete({
       where: { id: params.id },
     })
 
-    return NextResponse.json({ success: true })
+    return apiSuccess({ success: true })
   } catch (error) {
     console.error('Error deleting client:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

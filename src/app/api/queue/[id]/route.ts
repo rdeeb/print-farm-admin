@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function PATCH(
   request: NextRequest,
@@ -11,11 +12,11 @@ export async function PATCH(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     const body = await request.json()
@@ -30,16 +31,13 @@ export async function PATCH(
     })
 
     if (!printJob) {
-      return NextResponse.json({ error: 'Print job not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Print job not found', 404)
     }
 
     // Only allow cancelling QUEUED jobs
     if (status === 'CANCELLED') {
       if (printJob.status !== 'QUEUED') {
-        return NextResponse.json(
-          { error: 'Only queued jobs can be cancelled' },
-          { status: 400 }
-        )
+        return apiError('BAD_REQUEST', 'Only queued jobs can be cancelled', 400)
       }
 
       // Update print job to CANCELLED and revert order part to WAITING
@@ -108,12 +106,12 @@ export async function PATCH(
         }
       })
 
-      return NextResponse.json({ success: true })
+      return apiSuccess({ success: true })
     }
 
-    return NextResponse.json({ error: 'Invalid status update' }, { status: 400 })
+    return apiError('BAD_REQUEST', 'Invalid status update', 400)
   } catch (error) {
     console.error('Error updating print job:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

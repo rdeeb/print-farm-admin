@@ -1,5 +1,25 @@
 import '@testing-library/jest-dom'
 
+// Polyfill Response for NextResponse (API routes and api-response.ts)
+if (typeof globalThis.Response === 'undefined') {
+  globalThis.Response = class Response {
+    constructor(body, init = {}) {
+      this.status = init.status ?? 200
+      this.body = body
+    }
+    json() {
+      return Promise.resolve(this.body)
+    }
+    static json(data, init = {}) {
+      return new globalThis.Response(data, { ...init, status: init.status ?? 200 })
+    }
+  }
+} else if (typeof globalThis.Response.json !== 'function') {
+  globalThis.Response.json = function (data, init = {}) {
+    return new globalThis.Response(data, { ...init, status: init.status ?? 200 })
+  }
+}
+
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
   useRouter: () => ({

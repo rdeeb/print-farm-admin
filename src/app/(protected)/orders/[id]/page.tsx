@@ -8,6 +8,7 @@ import { OrderDetailHeader } from '../components/detail/OrderDetailHeader'
 import { OrderInfoCard } from '../components/detail/OrderInfoCard'
 import { OrderPartsCard } from '../components/detail/OrderPartsCard'
 import { PrintSelectionDialog } from '../components/detail/PrintSelectionDialog'
+import { CancelOrderDialog } from '../components/detail/CancelOrderDialog'
 
 export default function OrderDetailPage() {
   const params = useParams()
@@ -26,6 +27,9 @@ export default function OrderDetailPage() {
     selectedPrinterId,
     editingQuantityId,
     quantityForm,
+    cancelDialogOpen,
+    filamentHandling,
+    hasPrintingParts,
     selectedOptions,
     activePrinters,
     isSelectedPrinterAvailable,
@@ -35,6 +39,8 @@ export default function OrderDetailPage() {
     setQuantityForm,
     setSelectedFilamentId,
     setSelectedPrinterId,
+    setCancelDialogOpen,
+    setFilamentHandling,
     handleStartPrinting,
     handleEditQuantity,
     handleCancelQuantity,
@@ -45,6 +51,7 @@ export default function OrderDetailPage() {
     markDelivered,
     handleSaveDueDate,
     handleCancelDueDateEdit,
+    cancelOrder,
   } = useOrderDetail(orderId)
 
   if (isLoading || !order) {
@@ -73,6 +80,7 @@ export default function OrderDetailPage() {
         onCancelDueDateEdit={handleCancelDueDateEdit}
         onMarkAssembled={markAssembled}
         onMarkDelivered={markDelivered}
+        onCancelOrder={() => setCancelDialogOpen(true)}
       />
 
       <OrderInfoCard
@@ -110,6 +118,17 @@ export default function OrderDetailPage() {
         onPrinterChange={setSelectedPrinterId}
         onFilamentChange={setSelectedFilamentId}
         onConfirm={confirmStartPrinting}
+      />
+
+      <CancelOrderDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        order={order}
+        isSaving={isSaving}
+        filamentHandling={filamentHandling}
+        onFilamentHandlingChange={setFilamentHandling}
+        onConfirm={cancelOrder}
+        hasPrintingParts={hasPrintingParts}
       />
     </div>
   )

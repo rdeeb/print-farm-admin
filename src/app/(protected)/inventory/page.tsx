@@ -67,7 +67,7 @@ export default function InventoryPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary?.totalSpools || 0}</div>
-            <p className="text-xs text-muted-foreground">Filament spools in inventory</p>
+            <p className="text-xs text-muted-foreground">Material spools in inventory</p>
           </CardContent>
         </Card>
 
@@ -80,7 +80,7 @@ export default function InventoryPage() {
             <div className="text-2xl font-bold">
               {((summary?.totalWeight || 0) / 1000).toFixed(1)} kg
             </div>
-            <p className="text-xs text-muted-foreground">Remaining filament</p>
+            <p className="text-xs text-muted-foreground">Remaining material</p>
           </CardContent>
         </Card>
 
@@ -102,7 +102,7 @@ export default function InventoryPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary?.typeBreakdown?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">Different filament types</p>
+            <p className="text-xs text-muted-foreground">Different material types</p>
           </CardContent>
         </Card>
       </div>
@@ -111,7 +111,7 @@ export default function InventoryPage() {
       <Card>
         <CardHeader>
           <CardTitle>Inventory by Type</CardTitle>
-          <CardDescription>Breakdown of filament inventory by type</CardDescription>
+          <CardDescription>Breakdown of material inventory by type</CardDescription>
         </CardHeader>
         <CardContent>
           {summary?.typeBreakdown && summary.typeBreakdown.length > 0 ? (

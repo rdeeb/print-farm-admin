@@ -39,7 +39,7 @@ export function FilamentFilters({
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search filaments..."
+                placeholder="Search materials..."
                 value={searchTerm}
                 onChange={(e) => onSearchChange(e.target.value)}
                 className="pl-9"

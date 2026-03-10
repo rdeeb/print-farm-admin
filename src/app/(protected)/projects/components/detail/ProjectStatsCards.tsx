@@ -34,7 +34,7 @@ export function ProjectStatsCards({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-2xl font-bold">{totalFilament}g</p>
-              <p className="text-sm text-gray-500">Total Filament</p>
+              <p className="text-sm text-gray-500">Total Material</p>
             </div>
             <Package className="h-8 w-8 text-gray-400" />
           </div>

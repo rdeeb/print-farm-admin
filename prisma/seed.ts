@@ -119,27 +119,75 @@ async function main() {
   }
   console.log(`✅ Seeded ${printerModelsData.length} printer models`)
 
-  // Create default filament types
+  // Create default material types per technology (FDM, SLA, SLS)
   const filamentTypes = await Promise.all([
+    // FDM (filament) types
     prisma.filamentType.upsert({
       where: { code: 'PLA' },
-      update: {},
-      create: { name: 'PLA', code: 'PLA' },
+      update: { technology: 'FDM' },
+      create: { name: 'PLA', code: 'PLA', technology: 'FDM' },
     }),
     prisma.filamentType.upsert({
       where: { code: 'ABS' },
-      update: {},
-      create: { name: 'ABS', code: 'ABS' },
+      update: { technology: 'FDM' },
+      create: { name: 'ABS', code: 'ABS', technology: 'FDM' },
     }),
     prisma.filamentType.upsert({
       where: { code: 'PETG' },
-      update: {},
-      create: { name: 'PETG', code: 'PETG' },
+      update: { technology: 'FDM' },
+      create: { name: 'PETG', code: 'PETG', technology: 'FDM' },
     }),
     prisma.filamentType.upsert({
       where: { code: 'TPU' },
-      update: {},
-      create: { name: 'TPU', code: 'TPU' },
+      update: { technology: 'FDM' },
+      create: { name: 'TPU', code: 'TPU', technology: 'FDM' },
+    }),
+    // SLA (resin) types
+    prisma.filamentType.upsert({
+      where: { code: 'STD_RESIN' },
+      update: { technology: 'SLA' },
+      create: { name: 'Standard Resin', code: 'STD_RESIN', technology: 'SLA' },
+    }),
+    prisma.filamentType.upsert({
+      where: { code: 'TOUGH_RESIN' },
+      update: { technology: 'SLA' },
+      create: { name: 'Tough Resin', code: 'TOUGH_RESIN', technology: 'SLA' },
+    }),
+    prisma.filamentType.upsert({
+      where: { code: 'FLEX_RESIN' },
+      update: { technology: 'SLA' },
+      create: { name: 'Flexible Resin', code: 'FLEX_RESIN', technology: 'SLA' },
+    }),
+    prisma.filamentType.upsert({
+      where: { code: 'DENTAL_RESIN' },
+      update: { technology: 'SLA' },
+      create: { name: 'Dental Resin', code: 'DENTAL_RESIN', technology: 'SLA' },
+    }),
+    prisma.filamentType.upsert({
+      where: { code: 'CLEAR_RESIN' },
+      update: { technology: 'SLA' },
+      create: { name: 'Clear Resin', code: 'CLEAR_RESIN', technology: 'SLA' },
+    }),
+    prisma.filamentType.upsert({
+      where: { code: 'CASTABLE_RESIN' },
+      update: { technology: 'SLA' },
+      create: { name: 'Castable Resin', code: 'CASTABLE_RESIN', technology: 'SLA' },
+    }),
+    // SLS (powder) types
+    prisma.filamentType.upsert({
+      where: { code: 'PA12' },
+      update: { technology: 'SLS' },
+      create: { name: 'PA12 (Nylon 12)', code: 'PA12', technology: 'SLS' },
+    }),
+    prisma.filamentType.upsert({
+      where: { code: 'PA11' },
+      update: { technology: 'SLS' },
+      create: { name: 'PA11 (Nylon 11)', code: 'PA11', technology: 'SLS' },
+    }),
+    prisma.filamentType.upsert({
+      where: { code: 'TPU_SLS' },
+      update: { technology: 'SLS' },
+      create: { name: 'TPU Powder', code: 'TPU_SLS', technology: 'SLS' },
     }),
   ])
 
@@ -424,6 +472,314 @@ async function main() {
         },
       ],
     })
+  }
+
+  // Realistic demo data: orders in multiple statuses, failure logs, low-stock spools, job history
+  const demoClients = await prisma.client.findMany({
+    where: { tenantId: demoTenant.id },
+    take: 5,
+  })
+  const demoPrinters = await prisma.printer.findMany({
+    where: { tenantId: demoTenant.id },
+    orderBy: { name: 'asc' },
+  })
+  const existingOrders = await prisma.order.count({
+    where: { tenantId: demoTenant.id },
+  })
+
+  if (existingOrders === 0 && demoClients.length >= 3 && demoPrinters.length >= 4) {
+    // Ensure 2 spools below threshold (e.g. 20%): one at 15% already in Bambu Orange; add/update one at 10%
+    const lowSpools = await prisma.filamentSpool.findMany({
+      where: {
+        filament: { tenantId: demoTenant.id },
+        remainingPercent: { lte: 25 },
+      },
+      take: 3,
+    })
+    if (lowSpools.length >= 1 && lowSpools[0].remainingPercent > 10) {
+      await prisma.filamentSpool.update({
+        where: { id: lowSpools[0].id },
+        data: {
+          remainingPercent: 10,
+          remainingWeight: Math.round((lowSpools[0].capacity ?? lowSpools[0].weight) * 0.1),
+          remainingQuantity: Math.round((lowSpools[0].capacity ?? lowSpools[0].weight) * 0.1),
+        },
+      })
+    }
+
+    // Projects with parts
+    const projA = await prisma.project.create({
+      data: {
+        name: 'Widget Set A',
+        description: 'Demo project with two parts',
+        status: 'ACTIVE',
+        salesPrice: 49.99,
+        assemblyTime: 15,
+        tenantId: demoTenant.id,
+        createdById: adminUser.id,
+        parts: {
+          create: [
+            { name: 'Widget Left', filamentWeight: 50, printTime: 120, quantity: 1 },
+            { name: 'Widget Right', filamentWeight: 45, printTime: 95, quantity: 1 },
+          ],
+        },
+      },
+      include: { parts: true },
+    })
+    const projAPartIds = await prisma.projectPart.findMany({
+      where: { projectId: projA.id },
+      select: { id: true },
+    })
+
+    const projB = await prisma.project.create({
+      data: {
+        name: 'Gadget B',
+        description: 'Single part demo',
+        status: 'ACTIVE',
+        salesPrice: 29.99,
+        assemblyTime: 5,
+        tenantId: demoTenant.id,
+        createdById: adminUser.id,
+        parts: {
+          create: [
+            { name: 'Gadget Base', filamentWeight: 80, printTime: 180, quantity: 1 },
+          ],
+        },
+      },
+      include: { parts: true },
+    })
+    const projBPartIds = await prisma.projectPart.findMany({
+      where: { projectId: projB.id },
+      select: { id: true },
+    })
+
+    const baseDate = new Date()
+    baseDate.setDate(baseDate.getDate() - 14)
+
+    // 3 active orders (different statuses)
+    const order1 = await prisma.order.create({
+      data: {
+        orderNumber: 'ORD-DEMO-01',
+        quantity: 2,
+        status: 'PENDING',
+        priority: 'MEDIUM',
+        dueDate: new Date(baseDate.getTime() + 7 * 24 * 60 * 60 * 1000),
+        clientId: demoClients[0].id,
+        tenantId: demoTenant.id,
+        projectId: projA.id,
+        createdById: adminUser.id,
+      },
+    })
+    await prisma.orderPart.createMany({
+      data: projAPartIds.map((p, i) => ({
+        orderId: order1.id,
+        partId: p.id,
+        quantity: 2,
+        status: i === 0 ? 'WAITING' : 'WAITING',
+      })),
+    })
+
+    const order2 = await prisma.order.create({
+      data: {
+        orderNumber: 'ORD-DEMO-02',
+        quantity: 1,
+        status: 'IN_PROGRESS',
+        priority: 'HIGH',
+        dueDate: new Date(baseDate.getTime() + 3 * 24 * 60 * 60 * 1000),
+        clientId: demoClients[1].id,
+        tenantId: demoTenant.id,
+        projectId: projA.id,
+        createdById: adminUser.id,
+      },
+    })
+    await prisma.orderPart.createMany({
+      data: projAPartIds.map((p, i) => ({
+        orderId: order2.id,
+        partId: p.id,
+        quantity: 1,
+        status: i === 0 ? 'PRINTING' : 'WAITING',
+      })),
+    })
+    const order2Parts = await prisma.orderPart.findMany({
+      where: { orderId: order2.id },
+      orderBy: { partId: 'asc' },
+    })
+
+    const order3 = await prisma.order.create({
+      data: {
+        orderNumber: 'ORD-DEMO-03',
+        quantity: 1,
+        status: 'WAITING',
+        priority: 'MEDIUM',
+        dueDate: new Date(baseDate.getTime() + 5 * 24 * 60 * 60 * 1000),
+        clientId: demoClients[2].id,
+        tenantId: demoTenant.id,
+        projectId: projB.id,
+        createdById: adminUser.id,
+      },
+    })
+    await prisma.orderPart.createMany({
+      data: projBPartIds.map((p) => ({
+        orderId: order3.id,
+        partId: p.id,
+        quantity: 1,
+        status: 'PRINTED',
+      })),
+    })
+
+    // 2 completed orders with failure logs (print jobs with FAILED + failureReason)
+    const order4 = await prisma.order.create({
+      data: {
+        orderNumber: 'ORD-DEMO-04',
+        quantity: 1,
+        status: 'DELIVERED',
+        priority: 'MEDIUM',
+        dueDate: new Date(baseDate.getTime() - 5 * 24 * 60 * 60 * 1000),
+        clientId: demoClients[0].id,
+        tenantId: demoTenant.id,
+        projectId: projA.id,
+        createdById: adminUser.id,
+      },
+    })
+    await prisma.orderPart.createMany({
+      data: projAPartIds.map((p) => ({
+        orderId: order4.id,
+        partId: p.id,
+        quantity: 1,
+        status: 'PRINTED',
+      })),
+    })
+    const order4OrderParts = await prisma.orderPart.findMany({
+      where: { orderId: order4.id },
+      orderBy: { partId: 'asc' },
+    })
+
+    const order5 = await prisma.order.create({
+      data: {
+        orderNumber: 'ORD-DEMO-05',
+        quantity: 1,
+        status: 'DELIVERED',
+        priority: 'LOW',
+        dueDate: new Date(baseDate.getTime() - 3 * 24 * 60 * 60 * 1000),
+        clientId: demoClients[1].id,
+        tenantId: demoTenant.id,
+        projectId: projB.id,
+        createdById: adminUser.id,
+      },
+    })
+    await prisma.orderPart.createMany({
+      data: projBPartIds.map((p) => ({
+        orderId: order5.id,
+        partId: p.id,
+        quantity: 1,
+        status: 'PRINTED',
+      })),
+    })
+    const order5OrderParts = await prisma.orderPart.findMany({
+      where: { orderId: order5.id },
+      orderBy: { partId: 'asc' },
+    })
+
+    const spoolsForJobs = await prisma.filamentSpool.findMany({
+      where: { filament: { tenantId: demoTenant.id } },
+      take: 4,
+    })
+
+    // Print job history: 4 printers with mix of COMPLETED and FAILED (2 completed orders with failure logs)
+    const startPast = new Date(baseDate.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const endPast = new Date(baseDate.getTime() - 4 * 24 * 60 * 60 * 1000)
+
+    for (let i = 0; i < 4; i++) {
+      const printer = demoPrinters[i]
+      const orderPart4 = order4OrderParts[i % order4OrderParts.length]
+      const orderPart5 = order5OrderParts[i % order5OrderParts.length]
+      const spool = spoolsForJobs[i % spoolsForJobs.length]
+
+      await prisma.printJob.create({
+        data: {
+          tenantId: demoTenant.id,
+          orderId: order4.id,
+          partId: orderPart4.partId,
+          printerId: printer.id,
+          spoolId: spool.id,
+          createdById: adminUser.id,
+          status: 'COMPLETED',
+          startTime: startPast,
+          endTime: endPast,
+          actualTime: 110,
+          estimatedTime: 120,
+        },
+      })
+      await prisma.printJob.create({
+        data: {
+          tenantId: demoTenant.id,
+          orderId: order4.id,
+          partId: orderPart4.partId,
+          printerId: printer.id,
+          spoolId: spool.id,
+          createdById: adminUser.id,
+          status: 'FAILED',
+          failureReason: i % 2 === 0 ? 'Bed Adhesion' : 'Filament Jam',
+          startTime: new Date(startPast.getTime() - 2 * 60 * 60 * 1000),
+          endTime: new Date(startPast.getTime() - 1.5 * 60 * 60 * 1000),
+          actualTime: 45,
+          estimatedTime: 120,
+        },
+      })
+      await prisma.printJob.create({
+        data: {
+          tenantId: demoTenant.id,
+          orderId: order5.id,
+          partId: orderPart5.partId,
+          printerId: printer.id,
+          spoolId: spool.id,
+          createdById: adminUser.id,
+          status: 'COMPLETED',
+          startTime: new Date(startPast.getTime() + 24 * 60 * 60 * 1000),
+          endTime: new Date(endPast.getTime() + 24 * 60 * 60 * 1000),
+          actualTime: 175,
+          estimatedTime: 180,
+        },
+      })
+      if (i < 2) {
+        await prisma.printJob.create({
+          data: {
+            tenantId: demoTenant.id,
+            orderId: order5.id,
+            partId: orderPart5.partId,
+            printerId: printer.id,
+            spoolId: spool.id,
+            createdById: adminUser.id,
+            status: 'FAILED',
+            failureReason: i === 0 ? 'Power Loss' : 'Warping',
+            startTime: new Date(startPast.getTime() + 12 * 60 * 60 * 1000),
+            endTime: new Date(startPast.getTime() + 12.5 * 60 * 60 * 1000),
+            actualTime: 30,
+            estimatedTime: 180,
+          },
+        })
+      }
+    }
+
+    // One active queue job for order2 (IN_PROGRESS)
+    const order2Part0 = order2Parts[0]
+    if (order2Part0 && spoolsForJobs[0]) {
+      await prisma.printJob.create({
+        data: {
+          tenantId: demoTenant.id,
+          orderId: order2.id,
+          partId: order2Part0.partId,
+          printerId: demoPrinters[0].id,
+          spoolId: spoolsForJobs[0].id,
+          createdById: adminUser.id,
+          status: 'PRINTING',
+          startTime: new Date(),
+          estimatedTime: 120,
+        },
+      })
+    }
+
+    console.log('✅ Demo orders, print job history, and low-stock spools seeded')
   }
 
   console.log('✅ Seed data created successfully!')

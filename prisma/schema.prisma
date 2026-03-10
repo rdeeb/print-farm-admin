@@ -84,6 +84,7 @@ model User {
   tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   accounts Account[]
   sessions Session[]
+  passwordResetTokens PasswordResetToken[]
 
   // Created entities
   createdProjects  Project[]  @relation("CreatedBy")
@@ -91,6 +92,18 @@ model User {
   createdPrintJobs PrintJob[] @relation("CreatedBy")
 
   @@map("users")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
 }
 
 enum UserRole {
@@ -585,4 +598,5 @@ enum LedgerSource {
   CONTAINER_INTAKE
   SOFT_COST_ALLOCATION
   MANUAL
+  MATERIAL_WASTE
 }

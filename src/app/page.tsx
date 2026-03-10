@@ -86,10 +86,10 @@ export default async function HomePage() {
                     <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
                   </svg>
                 </div>
-                Filament Tracking
+                Materials Tracking
               </CardTitle>
               <CardDescription>
-                Monitor filament inventory with automatic low-stock alerts and usage tracking
+                Monitor material inventory with automatic low-stock alerts and usage tracking
               </CardDescription>
             </CardHeader>
           </Card>

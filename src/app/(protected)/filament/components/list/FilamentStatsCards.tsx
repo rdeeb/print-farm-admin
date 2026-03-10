@@ -18,7 +18,7 @@ export function FilamentStatsCards({
       <Card>
         <CardContent className="pt-4">
           <p className="text-2xl font-bold">{filamentCount}</p>
-          <p className="text-sm text-gray-500">Filament Types</p>
+          <p className="text-sm text-gray-500">Material Types</p>
         </CardContent>
       </Card>
       <Card>

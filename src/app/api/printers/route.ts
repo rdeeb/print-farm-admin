@@ -1,15 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import { invalidatePrinterCostCache } from '@/lib/printer-cost-cache'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     const { searchParams } = new URL(request.url)
@@ -54,13 +55,13 @@ export async function GET(request: NextRequest) {
         queueCount: queueCountMap.get(printer.id) ?? 0,
       }))
 
-      return NextResponse.json(printersWithQueue)
+      return apiSuccess(printersWithQueue)
     }
 
-    return NextResponse.json(printers)
+    return apiSuccess(printers)
   } catch (error) {
     console.error('Error fetching printers:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
@@ -69,11 +70,11 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     const body = await request.json()
@@ -102,9 +103,9 @@ export async function POST(request: NextRequest) {
 
     invalidatePrinterCostCache(session.user.tenantId)
 
-    return NextResponse.json(printer, { status: 201 })
+    return apiSuccess(printer, 201)
   } catch (error) {
     console.error('Error creating printer:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

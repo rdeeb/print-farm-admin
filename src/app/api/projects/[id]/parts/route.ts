@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function GET(
   request: NextRequest,
@@ -11,7 +12,7 @@ export async function GET(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     // Verify project belongs to tenant
@@ -23,7 +24,7 @@ export async function GET(
     })
 
     if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Project not found', 404)
     }
 
     const parts = await prisma.projectPart.findMany({
@@ -52,10 +53,10 @@ export async function GET(
       },
     })
 
-    return NextResponse.json(parts)
+    return apiSuccess(parts)
   } catch (error) {
     console.error('Error fetching parts:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
@@ -67,11 +68,11 @@ export async function POST(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     // Verify project belongs to tenant
@@ -83,7 +84,7 @@ export async function POST(
     })
 
     if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Project not found', 404)
     }
 
     const body = await request.json()
@@ -128,9 +129,9 @@ export async function POST(
       },
     })
 
-    return NextResponse.json(part, { status: 201 })
+    return apiSuccess(part, 201)
   } catch (error) {
     console.error('Error creating part:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

@@ -100,7 +100,7 @@ export function FilamentTypeCard({
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Filament</AlertDialogTitle>
+                    <AlertDialogTitle>Delete Material</AlertDialogTitle>
                     <AlertDialogDescription>
                       Delete {filament.brand} {filament.type.code}{' '}
                       {filament.color.name}?

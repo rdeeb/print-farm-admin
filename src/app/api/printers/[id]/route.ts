@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
+import { apiError, apiSuccess } from '@/lib/api-response'
 import { invalidatePrinterCostCache } from '@/lib/printer-cost-cache'
 
 export async function GET(
@@ -12,7 +13,7 @@ export async function GET(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     const printer = await prisma.printer.findFirst({
@@ -28,13 +29,13 @@ export async function GET(
     })
 
     if (!printer) {
-      return NextResponse.json({ error: 'Printer not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Printer not found', 404)
     }
 
-    return NextResponse.json(printer)
+    return apiSuccess(printer)
   } catch (error) {
     console.error('Error fetching printer:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
@@ -46,11 +47,11 @@ export async function PATCH(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     const existing = await prisma.printer.findFirst({
@@ -61,7 +62,7 @@ export async function PATCH(
     })
 
     if (!existing) {
-      return NextResponse.json({ error: 'Printer not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Printer not found', 404)
     }
 
     const body = await request.json()
@@ -88,9 +89,9 @@ export async function PATCH(
 
     invalidatePrinterCostCache(session.user.tenantId)
 
-    return NextResponse.json(printer)
+    return apiSuccess(printer)
   } catch (error) {
     console.error('Error updating printer:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

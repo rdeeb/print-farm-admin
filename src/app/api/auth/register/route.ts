@@ -1,17 +1,14 @@
-import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { seedTenantFilaments } from '@/lib/seed-utils'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function POST(req: Request) {
   try {
     const { tenantName, userName, email, password } = await req.json()
 
     if (!tenantName || !userName || !email || !password) {
-      return NextResponse.json(
-        { message: 'Missing required fields' },
-        { status: 400 }
-      )
+      return apiError('BAD_REQUEST', 'Missing required fields', 400)
     }
 
     // Check if user already exists
@@ -20,10 +17,7 @@ export async function POST(req: Request) {
     })
 
     if (existingUser) {
-      return NextResponse.json(
-        { message: 'User with this email already exists' },
-        { status: 400 }
-      )
+      return apiError('CONFLICT', 'User with this email already exists', 400)
     }
 
     // Create a slug for the tenant
@@ -69,15 +63,13 @@ export async function POST(req: Request) {
       return { tenant, user }
     })
 
-    return NextResponse.json(
+    return apiSuccess(
       { message: 'Account created successfully', userId: result.user.id },
-      { status: 201 }
+      201
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Registration error:', error)
-    return NextResponse.json(
-      { message: error.message || 'Internal server error' },
-      { status: 500 }
-    )
+    const message = error instanceof Error ? error.message : 'Internal server error'
+    return apiError('INTERNAL_ERROR', message, 500)
   }
 }

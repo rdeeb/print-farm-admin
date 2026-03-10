@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { calculateProjectLandedCostById } from '@/lib/production-utils'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function GET(
   request: NextRequest,
@@ -11,7 +12,7 @@ export async function GET(
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     const cost = await calculateProjectLandedCostById(
@@ -20,12 +21,12 @@ export async function GET(
     )
 
     if (!cost) {
-      return NextResponse.json({ error: 'Project not found or settings not configured' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Project not found or settings not configured', 404)
     }
 
-    return NextResponse.json(cost)
+    return apiSuccess(cost)
   } catch (error) {
     console.error('Error calculating project cost:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

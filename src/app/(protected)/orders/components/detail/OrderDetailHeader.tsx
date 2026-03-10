@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Pencil, Save } from 'lucide-react'
+import { ArrowLeft, Pencil, Save, XCircle } from 'lucide-react'
 import { formatDateUTC } from '@/lib/utils'
 import type { Order } from '@/model/order'
 import type { LucideIcon } from 'lucide-react'
@@ -19,6 +19,7 @@ interface OrderDetailHeaderProps {
   onCancelDueDateEdit: () => void
   onMarkAssembled: () => void
   onMarkDelivered: () => void
+  onCancelOrder: () => void
 }
 
 export function OrderDetailHeader({
@@ -32,8 +33,10 @@ export function OrderDetailHeader({
   onCancelDueDateEdit,
   onMarkAssembled,
   onMarkDelivered,
+  onCancelOrder,
 }: OrderDetailHeaderProps) {
   const OrderStatusIcon = orderStatus.icon
+  const isOrderFinalized = ['CANCELLED', 'DELIVERED', 'COMPLETED'].includes(order.status)
 
   return (
     <div className="flex items-center justify-between">
@@ -59,20 +62,30 @@ export function OrderDetailHeader({
 
       {canEdit && (
         <div className="flex items-center space-x-2">
-          {isEditingDueDate ? (
+          {!isOrderFinalized && (
             <>
-              <Button variant="outline" onClick={onCancelDueDateEdit}>
-                Cancel
-              </Button>
-              <Button onClick={onSaveDueDate} disabled={isSaving}>
-                <Save className="h-4 w-4 mr-2" />
-                {isSaving ? 'Saving...' : 'Save'}
-              </Button>
+              {isEditingDueDate ? (
+                <>
+                  <Button variant="outline" onClick={onCancelDueDateEdit}>
+                    Cancel
+                  </Button>
+                  <Button onClick={onSaveDueDate} disabled={isSaving}>
+                    <Save className="h-4 w-4 mr-2" />
+                    {isSaving ? 'Saving...' : 'Save'}
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outline" onClick={onEditDueDate}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit Due Date
+                </Button>
+              )}
             </>
-          ) : (
-            <Button variant="outline" onClick={onEditDueDate}>
-              <Pencil className="h-4 w-4 mr-2" />
-              Edit Due Date
+          )}
+          {!['CANCELLED', 'DELIVERED', 'COMPLETED'].includes(order.status) && (
+            <Button variant="destructive" onClick={onCancelOrder} disabled={isSaving}>
+              <XCircle className="h-4 w-4 mr-2" />
+              Cancel Order
             </Button>
           )}
           {order.status === 'WAITING' && (

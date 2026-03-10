@@ -1,13 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { apiError, apiSuccess } from '@/lib/api-response'
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
     const { searchParams } = new URL(request.url)
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
       orderBy: [{ brand: 'asc' }, { type: { name: 'asc' } }],
     })
 
-    return NextResponse.json(
+    return apiSuccess(
       materials.map((material) => ({
         ...material,
         containers: material.spools,
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
     )
   } catch (error) {
     console.error('Materials GET error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
@@ -46,10 +47,10 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.tenantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Unauthorized', 401)
     }
     if (session.user.role === 'VIEWER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('FORBIDDEN', 'Forbidden', 403)
     }
 
     const body = await request.json()
@@ -79,9 +80,9 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(material, { status: 201 })
+    return apiSuccess(material, 201)
   } catch (error) {
     console.error('Materials POST error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }

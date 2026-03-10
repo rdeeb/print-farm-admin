@@ -39,6 +39,7 @@ export function OrderPartsCard({
   onQuantityFormChange,
 }: OrderPartsCardProps) {
   const orderParts = order.orderParts ?? []
+  const isOrderFinalized = ['CANCELLED', 'DELIVERED', 'COMPLETED'].includes(order.status)
 
   return (
     <Card>
@@ -95,7 +96,7 @@ export function OrderPartsCard({
                         <span className="text-xs text-gray-500">{requiredWeight}g required</span>
                       </div>
                     ) : (
-                      <p className="text-xs text-gray-400 mt-2">No filament requirement set</p>
+                      <p className="text-xs text-gray-400 mt-2">No material requirement set</p>
                     )}
                     {orderPart.filament && (
                       <p className="text-xs text-gray-500 mt-1">
@@ -105,7 +106,7 @@ export function OrderPartsCard({
                     )}
                   </div>
 
-                  {canEdit && (
+                  {canEdit && !isOrderFinalized && (
                     <div className="flex items-center space-x-2">
                       {isEditingQuantity ? (
                         <>
@@ -154,6 +155,12 @@ export function OrderPartsCard({
                         </>
                       )}
                     </div>
+                  )}
+                  {orderPart.status === 'QUEUED' && isOrderFinalized && (
+                    <span className="text-xs text-amber-600 flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      In queue
+                    </span>
                   )}
                 </div>
               )

@@ -14,10 +14,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Clock, Play, CheckCircle, XCircle, Pause, Printer, ListOrdered, ExternalLink, Trash2 } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Clock, Play, CheckCircle, XCircle, Pause, Printer, ListOrdered, ExternalLink, Trash2, MoreVertical, AlertTriangle, History } from 'lucide-react'
 import { formatDuration } from '@/lib/utils'
 import { PrinterLoaderIcon } from '@/components/ui/printer-loader-icon'
 import type { PrintJob, JobCardProps } from '@/model/queue'
+import { FailureLogDialog } from './components/FailureLogDialog'
+import { JobHistoryList } from './components/JobHistoryList'
 
 const statusConfig = {
   QUEUED: { label: 'Queued', variant: 'secondary' as const, icon: Clock },
@@ -45,6 +53,9 @@ export default function QueuePage() {
   const [filterStatus, setFilterStatus] = useState<string>('')
   const [filterPriority, setFilterPriority] = useState<string>('')
   const [filterPrinter, setFilterPrinter] = useState<string>('')
+  const [failureDialogJobId, setFailureDialogJobId] = useState<string | null>(null)
+  // TODO: sync tab to URL search param for shareable history links
+  const [activeTab, setActiveTab] = useState<'queue' | 'history'>('queue')
 
   const canEdit = session?.user?.role !== 'VIEWER'
 
@@ -260,6 +271,38 @@ export default function QueuePage() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-1 border-b">
+        <button
+          onClick={() => setActiveTab('queue')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'queue'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <ListOrdered className="inline h-4 w-4 mr-1.5 -mt-0.5" />
+          Active Queue
+        </button>
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'history'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <History className="inline h-4 w-4 mr-1.5 -mt-0.5" />
+          History
+        </button>
+      </div>
+
+      {activeTab === 'history' && (
+        <JobHistoryList canEdit={canEdit} onReprintSuccess={fetchJobs} />
+      )}
+
+      {activeTab === 'queue' && (
+      <>
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <Card>
@@ -350,6 +393,7 @@ export default function QueuePage() {
                 canEdit={canEdit}
                 isUpdating={isUpdating === job.id}
                 onMarkPrinted={() => markPrinted(job)}
+                onMarkFailed={() => setFailureDialogJobId(job.id)}
               />
             ))}
           </div>
@@ -370,6 +414,7 @@ export default function QueuePage() {
                 queuePosition={index + 1}
                 onStartPrinting={job.printer?.status === 'IDLE' ? () => startPrinting(job) : undefined}
                 onCancel={() => cancelJob(job)}
+                onMarkFailed={() => setFailureDialogJobId(job.id)}
               />
             ))}
           </div>
@@ -401,14 +446,28 @@ export default function QueuePage() {
           </CardContent>
         </Card>
       )}
+
+      </>
+      )}
+
+      {failureDialogJobId && (
+        <FailureLogDialog
+          key={failureDialogJobId ?? 'none'}
+          open={!!failureDialogJobId}
+          onOpenChange={(open) => { if (!open) setFailureDialogJobId(null) }}
+          jobId={failureDialogJobId}
+          onSuccess={fetchJobs}
+        />
+      )}
     </div>
   )
 }
 
-function JobCard({ job, canEdit, isUpdating, queuePosition, onStartPrinting, onMarkPrinted, onCancel }: JobCardProps) {
+function JobCard({ job, canEdit, isUpdating, queuePosition, onStartPrinting, onMarkPrinted, onCancel, onMarkFailed }: JobCardProps) {
   const status = statusConfig[job.status]
   const priority = priorityConfig[job.priority]
   const StatusIcon = status.icon
+  const isFailed = job.status === 'FAILED'
 
   // Calculate elapsed time for printing jobs
   const elapsedTime = useMemo(() => {
@@ -418,8 +477,10 @@ function JobCard({ job, canEdit, isUpdating, queuePosition, onStartPrinting, onM
     return Math.floor((now - start) / 60000) // minutes
   }, [job.status, job.startTime])
 
+  const canMarkFailed = canEdit && ['QUEUED', 'PRINTING'].includes(job.status) && !!onMarkFailed
+
   return (
-    <Card>
+    <Card className={isFailed ? 'border-l-4 border-l-red-500' : ''}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -428,8 +489,8 @@ function JobCard({ job, canEdit, isUpdating, queuePosition, onStartPrinting, onM
                 {queuePosition}
               </div>
             )}
-            <div className="p-2 bg-gray-100 rounded-lg">
-              <Printer className="h-5 w-5 text-gray-600" />
+            <div className={`p-2 rounded-lg ${isFailed ? 'bg-red-50' : 'bg-gray-100'}`}>
+              <Printer className={`h-5 w-5 ${isFailed ? 'text-red-500' : 'text-gray-600'}`} />
             </div>
             <div>
               <div className="flex items-center space-x-2">
@@ -456,6 +517,12 @@ function JobCard({ job, canEdit, isUpdating, queuePosition, onStartPrinting, onM
                 <span>•</span>
                 <span>{job.order.clientName}</span>
               </div>
+              {isFailed && job.failureReason && (
+                <div className="flex items-center space-x-1 mt-1 text-sm text-red-600">
+                  <AlertTriangle className="h-3 w-3 shrink-0" />
+                  <span>{job.failureReason}</span>
+                </div>
+              )}
             </div>
           </div>
           <div className="flex items-center space-x-4">
@@ -509,16 +576,6 @@ function JobCard({ job, canEdit, isUpdating, queuePosition, onStartPrinting, onM
                 {job.status === 'QUEUED' && !onStartPrinting && (
                   <span className="text-xs text-amber-600">Printer busy</span>
                 )}
-                {job.status === 'QUEUED' && onCancel && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={onCancel}
-                    disabled={isUpdating}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
                 {job.status === 'PRINTING' && onMarkPrinted && (
                   <Button
                     size="sm"
@@ -528,6 +585,36 @@ function JobCard({ job, canEdit, isUpdating, queuePosition, onStartPrinting, onM
                     <CheckCircle className="h-4 w-4 mr-1" />
                     {isUpdating ? 'Completing...' : 'Mark Printed'}
                   </Button>
+                )}
+                {/* Dropdown for additional actions (Cancel, Mark as Failed) */}
+                {(job.status === 'QUEUED' || canMarkFailed) && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="outline" disabled={isUpdating}>
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {job.status === 'QUEUED' && onCancel && (
+                        <DropdownMenuItem
+                          onClick={onCancel}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Cancel Job
+                        </DropdownMenuItem>
+                      )}
+                      {canMarkFailed && (
+                        <DropdownMenuItem
+                          onClick={onMarkFailed}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <XCircle className="h-4 w-4 mr-2" />
+                          Mark as Failed
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </div>
             )}

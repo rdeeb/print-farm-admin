@@ -47,4 +47,5 @@ export interface JobCardProps {
   onStartPrinting?: () => void
   onMarkPrinted?: () => void
   onCancel?: () => void
+  onMarkFailed?: () => void
 }

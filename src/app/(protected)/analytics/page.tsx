@@ -1,14 +1,38 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { BarChart3, TrendingUp, Clock, CheckCircle, Package, Printer } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { BarChart3, TrendingUp, Clock, CheckCircle, Package, Printer, AlertCircle } from 'lucide-react'
 import { PrinterLoaderIcon } from '@/components/ui/printer-loader-icon'
 import type { AnalyticsData } from '@/model/analytics'
+import type { TimeseriesDataPoint } from '@/types/analytics'
+import { OrdersOverTimeChart } from './components/OrdersOverTimeChart'
+import { RevenueOverTimeChart } from './components/RevenueOverTimeChart'
+import { FilamentUsageChart } from './components/FilamentUsageChart'
+import { FailureBreakdownChart, type FailureDataPoint } from './components/FailureBreakdownChart'
+
+type DateRange = '3m' | '6m' | '12m' | 'ytd'
+
+const DATE_RANGE_OPTIONS: { label: string; value: DateRange }[] = [
+  { label: '3M', value: '3m' },
+  { label: '6M', value: '6m' },
+  { label: '12M', value: '12m' },
+  { label: 'YTD', value: 'ytd' },
+]
 
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+
+  const [timeseriesData, setTimeseriesData] = useState<TimeseriesDataPoint[]>([])
+  const [timeseriesLoading, setTimeseriesLoading] = useState(true)
+  const [timeseriesError, setTimeseriesError] = useState<string | null>(null)
+  const [selectedRange, setSelectedRange] = useState<DateRange>('6m')
+
+  const [failureData, setFailureData] = useState<FailureDataPoint[]>([])
+  const [failureLoading, setFailureLoading] = useState(true)
+  const [failureError, setFailureError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -27,6 +51,52 @@ export default function AnalyticsPage() {
 
     fetchAnalytics()
   }, [])
+
+  const fetchTimeseries = useCallback(async (range: DateRange) => {
+    setTimeseriesLoading(true)
+    setTimeseriesError(null)
+    try {
+      const response = await fetch(`/api/analytics/timeseries?range=${range}`)
+      if (response.ok) {
+        const json = await response.json()
+        setTimeseriesData(json ?? [])
+      } else {
+        setTimeseriesError('Failed to load chart data. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error fetching timeseries data:', error)
+      setTimeseriesError('Failed to load chart data. Please try again.')
+    } finally {
+      setTimeseriesLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchTimeseries(selectedRange)
+  }, [selectedRange, fetchTimeseries])
+
+  const fetchFailures = useCallback(async () => {
+    setFailureLoading(true)
+    setFailureError(null)
+    try {
+      const response = await fetch('/api/analytics/failures')
+      if (response.ok) {
+        const data = await response.json()
+        setFailureData(data ?? [])
+      } else {
+        setFailureError('Failed to load failure data. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error fetching failure analytics:', error)
+      setFailureError('Failed to load failure data. Please try again.')
+    } finally {
+      setFailureLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchFailures()
+  }, [fetchFailures])
 
   if (isLoading) {
     return (
@@ -111,7 +181,39 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
-      {/* Charts Placeholder */}
+      {/* Date Range Selector */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium text-gray-600">Period:</span>
+        <div className="flex gap-1">
+          {DATE_RANGE_OPTIONS.map(({ label, value }) => (
+            <Button
+              key={value}
+              variant={selectedRange === value ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedRange(value)}
+              className="min-w-[48px]"
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* Timeseries error banner */}
+      {timeseriesError && (
+        <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{timeseriesError}</span>
+          <button
+            onClick={() => fetchTimeseries(selectedRange)}
+            className="ml-auto underline underline-offset-2 hover:no-underline"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -122,13 +224,35 @@ export default function AnalyticsPage() {
             <CardDescription>Monthly order trends</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
-              <div className="text-center text-gray-500">
-                <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                <p className="text-lg font-medium">Chart Coming Soon</p>
-                <p className="text-sm">Order analytics visualization</p>
-              </div>
-            </div>
+            <OrdersOverTimeChart data={timeseriesData} isLoading={timeseriesLoading} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Revenue Over Time
+            </CardTitle>
+            <CardDescription>Monthly income from orders</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RevenueOverTimeChart data={timeseriesData} isLoading={timeseriesLoading} />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Filament Consumption
+            </CardTitle>
+            <CardDescription>Filament used by completed print jobs</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FilamentUsageChart data={timeseriesData} isLoading={timeseriesLoading} />
           </CardContent>
         </Card>
 
@@ -141,13 +265,43 @@ export default function AnalyticsPage() {
             <CardDescription>Usage across all printers</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-center h-[300px] bg-gray-50 rounded-lg">
               <div className="text-center text-gray-500">
                 <Printer className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                 <p className="text-lg font-medium">Chart Coming Soon</p>
                 <p className="text-sm">Printer utilization metrics</p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Failure analytics error banner */}
+      {failureError && (
+        <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{failureError}</span>
+          <button
+            onClick={() => fetchFailures()}
+            className="ml-auto underline underline-offset-2 hover:no-underline"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Failure Reason Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              Failure Reason Breakdown
+            </CardTitle>
+            <CardDescription>Failed print jobs grouped by reason</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FailureBreakdownChart data={failureData} isLoading={failureLoading} />
           </CardContent>
         </Card>
       </div>

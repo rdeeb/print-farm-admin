@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Building, CalendarDays, DollarSign, Sliders, Save, Coins } from 'lucide-react'
+import { BillingSection } from './components/BillingSection'
 
 export default function SettingsPage() {
   const { data: session } = useSession()
@@ -175,6 +176,8 @@ export default function SettingsPage() {
           Manage your farm configuration and preferences
         </p>
       </div>
+
+      <BillingSection />
 
       <Card>
         <CardHeader>

@@ -63,8 +63,34 @@ model Tenant {
   settings             TenantSettings?
   hardware             Hardware[]
   financeLedgerEntries FinanceLedgerEntry[]
+  subscription         Subscription?
 
   @@map("tenants")
+}
+
+enum PlanTier {
+  TRIAL
+  SOLO
+  SHOP
+  FARM
+}
+
+model Subscription {
+  id                   String    @id @default(cuid())
+  tenantId             String    @unique
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  stripePriceId        String?
+  tier                 PlanTier  @default(TRIAL)
+  status               String    @default("trialing")
+  trialEndsAt          DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  tenant               Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
 }
 
 model User {
@@ -602,4 +628,26 @@ enum LedgerSource {
   SOFT_COST_ALLOCATION
   MANUAL
   MATERIAL_WASTE
+}
+
+// Waitlist / wishlist registration (pre-launch validation)
+model WishlistRegistration {
+  id        String   @id @default(cuid())
+  email     String
+  createdAt DateTime @default(now())
+
+  // Q1: How many printers, how do you monitor?
+  printerCountAndMonitoring String? @db.Text
+  // Q2: Most expensive or frustrating problem?
+  biggestProblem String? @db.Text
+  // Q3: Tools tried + likes/dislikes
+  toolsTried String? @db.Text
+  // Q4: Magic wand — one thing to fix
+  magicWandFix String? @db.Text
+  // Q5: What would it be worth per month?
+  worthPerMonth String? @db.Text
+  // Bonus: What would break if you doubled printers?
+  doublePrintersBreak String? @db.Text
+
+  @@map("wishlist_registrations")
 }

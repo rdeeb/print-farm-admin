@@ -78,6 +78,7 @@ export function PrintersPageHeader({
             onEditFormChange={onEditFormChange}
             isSaving={isSavingEdit}
             onSubmit={onEditSubmit}
+            editingPrinter={editingPrinter}
           />
         </>
       )}

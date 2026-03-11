@@ -157,6 +157,15 @@ export async function GET(request: NextRequest) {
       }),
     ])
 
+    // Overdue maintenance count
+    const overdueMaintenancePrinters = await prisma.printer.count({
+      where: {
+        tenantId,
+        isActive: true,
+        nextMaintenanceDue: { lte: new Date() },
+      },
+    })
+
     // #5: Compute stock alert counts using each spool's own threshold
     const criticalStockSpools = spoolStockData.filter(
       (s) => s.remainingPercent > 0 && s.remainingPercent <= 10
@@ -308,6 +317,9 @@ export async function GET(request: NextRequest) {
       // Breakdowns
       ordersBreakdown,
       printersBreakdown,
+
+      // Maintenance
+      overdueMaintenancePrinters,
     }
 
     return apiSuccess(stats)

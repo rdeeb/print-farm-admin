@@ -20,9 +20,21 @@ export interface PrinterData {
   powerConsumption: number | null
   cost: number | null
   isActive: boolean
+  maintenanceIntervalDays?: number | null
+  nextMaintenanceDue?: string | null
   _count: {
     printJobs: number
   }
+}
+
+export interface PrinterMaintenanceLog {
+  id: string
+  printerId: string
+  type: string
+  notes: string | null
+  performedAt: string
+  performedBy: string | null
+  createdAt: string
 }
 
 export interface PrinterModel {

@@ -22,4 +22,5 @@ export interface DashboardStats {
   successRate: number
   ordersBreakdown: Record<string, number>
   printersBreakdown: Record<string, number>
+  overdueMaintenancePrinters: number
 }

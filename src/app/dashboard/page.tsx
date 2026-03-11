@@ -188,6 +188,28 @@ export default function DashboardPage() {
         </Link>
       </div>
 
+      {/* Overdue Maintenance Alert */}
+      {(stats?.overdueMaintenancePrinters || 0) > 0 && (
+        <Link href="/printers" className="block">
+          <Card className="cursor-pointer transition-all hover:shadow-md active:scale-[0.98] border-red-300 bg-red-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                  <div>
+                    <p className="font-medium text-red-800">
+                      {stats?.overdueMaintenancePrinters} printer{(stats?.overdueMaintenancePrinters || 0) > 1 ? 's' : ''} overdue for maintenance
+                    </p>
+                    <p className="text-sm text-red-600">Schedule maintenance to avoid downtime</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-red-400" />
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+      )}
+
       {/* ============================================
           SECTION 2: MONEY SNAPSHOT
           ============================================ */}
@@ -412,8 +434,34 @@ export default function DashboardPage() {
       )}
 
       {/* ============================================
-          SECTION 6: LOW STOCK ALERT (Compact)
+          SECTION 6: CRITICAL STOCK ALERT (red, <= 10%)
           ============================================ */}
+      {(stats?.criticalStockSpools || 0) > 0 && (
+        <Card className="border-red-300 bg-red-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+                <div>
+                  <p className="font-medium text-red-800">
+                    {stats?.criticalStockSpools} spool{(stats?.criticalStockSpools || 0) > 1 ? 's' : ''} critically low — reorder now!
+                  </p>
+                  <p className="text-sm text-red-600">
+                    10% or less remaining
+                  </p>
+                </div>
+              </div>
+              <Link href="/filament?lowStock=true">
+                <button className="px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors">
+                  View
+                </button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Low Stock Alert (amber, 11-20%) */}
       {(stats?.lowStockSpools || 0) > 0 && (
         <Card className="border-amber-200 bg-amber-50">
           <CardContent className="p-4">
@@ -425,7 +473,7 @@ export default function DashboardPage() {
                     {stats?.lowStockSpools} spool{(stats?.lowStockSpools || 0) > 1 ? 's' : ''} running low
                   </p>
                   <p className="text-sm text-amber-600">
-                    Less than 20% remaining
+                    Between 11% and 20% remaining
                   </p>
                 </div>
               </div>

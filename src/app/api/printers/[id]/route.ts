@@ -66,7 +66,14 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { name, model, brand, technology, nozzleSize, buildVolume, powerConsumption, cost } = body
+    const { name, model, brand, technology, nozzleSize, buildVolume, powerConsumption, cost, maintenanceIntervalDays } = body
+
+    if (maintenanceIntervalDays != null) {
+      const interval = parseInt(maintenanceIntervalDays)
+      if (interval <= 0 || interval > 3650) {
+        return apiError('BAD_REQUEST', 'Maintenance interval must be between 1 and 3650 days', 400)
+      }
+    }
 
     const printer = await prisma.printer.update({
       where: { id: params.id },
@@ -79,6 +86,11 @@ export async function PATCH(
         ...(buildVolume !== undefined && { buildVolume: buildVolume ?? null }),
         ...(powerConsumption !== undefined && { powerConsumption: powerConsumption ?? null }),
         ...(cost !== undefined && { cost: cost === '' || cost == null ? null : parseFloat(cost) }),
+        ...(maintenanceIntervalDays !== undefined && {
+          maintenanceIntervalDays: maintenanceIntervalDays === '' || maintenanceIntervalDays == null
+            ? null
+            : parseInt(maintenanceIntervalDays),
+        }),
       },
       include: {
         _count: {

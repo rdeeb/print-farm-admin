@@ -404,26 +404,43 @@ model PrinterModel {
 
 // Printer Management (tenant-specific instances)
 model Printer {
-  id               String            @id @default(cuid())
-  name             String
-  model            String
-  brand            String?
-  technology       PrinterTechnology @default(FDM)
-  status           PrinterStatus     @default(IDLE)
-  buildVolume      Json? // {x, y, z} in mm
-  nozzleSize       Float? // mm
-  powerConsumption Float? // Watts (average during printing)
-  cost             Float? // Total printer cost; operating cost per hour = cost / 13140
-  isActive         Boolean           @default(true)
-  tenantId         String
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  id                     String            @id @default(cuid())
+  name                   String
+  model                  String
+  brand                  String?
+  technology             PrinterTechnology @default(FDM)
+  status                 PrinterStatus     @default(IDLE)
+  buildVolume            Json? // {x, y, z} in mm
+  nozzleSize             Float? // mm
+  powerConsumption       Float? // Watts (average during printing)
+  cost                   Float? // Total printer cost; operating cost per hour = cost / 13140
+  isActive               Boolean           @default(true)
+  tenantId               String
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  maintenanceIntervalDays Int?
+  nextMaintenanceDue      DateTime?
 
   // Relations
-  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  printJobs PrintJob[]
+  tenant          Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  printJobs       PrintJob[]
+  maintenanceLogs PrinterMaintenanceLog[]
 
+  @@index([tenantId, nextMaintenanceDue])
   @@map("printers")
+}
+
+model PrinterMaintenanceLog {
+  id          String   @id @default(cuid())
+  printerId   String
+  type        String   // "routine", "repair", "cleaning", "calibration"
+  notes       String?
+  performedAt DateTime @default(now())
+  performedBy String?
+  createdAt   DateTime @default(now())
+  printer     Printer  @relation(fields: [printerId], references: [id], onDelete: Cascade)
+
+  @@map("printer_maintenance_logs")
 }
 
 enum PrinterStatus {
@@ -540,6 +557,9 @@ model TenantSettings {
   softExpensePostingMode     SoftExpensePostingMode @default(SOFT_ONLY)
   currency                   String                 @default("USD")
   defaultLowStockThreshold   Int                    @default(20) // default % threshold for new spools
+  notifyFilamentLow          Boolean                @default(true)
+  notifyJobFailed            Boolean                @default(true)
+  notifyOrderOverdue         Boolean                @default(true)
   createdAt                  DateTime               @default(now())
   updatedAt                  DateTime               @updatedAt
 

@@ -21,6 +21,7 @@ export interface EditFormData {
   name: string
   powerConsumption: string
   cost: string
+  maintenanceIntervalDays: string
 }
 
 const initialFormData: PrinterFormData = {
@@ -40,6 +41,7 @@ const initialEditForm: EditFormData = {
   name: '',
   powerConsumption: '',
   cost: '',
+  maintenanceIntervalDays: '',
 }
 
 export function usePrinters() {
@@ -199,6 +201,7 @@ export function usePrinters() {
       name: printer.name,
       powerConsumption: printer.powerConsumption?.toString() ?? '',
       cost: printer.cost?.toString() ?? '',
+      maintenanceIntervalDays: printer.maintenanceIntervalDays?.toString() ?? '',
     })
   }, [])
 
@@ -217,6 +220,9 @@ export function usePrinters() {
               ? parseFloat(editForm.powerConsumption)
               : null,
             cost: editForm.cost ? parseFloat(editForm.cost) : null,
+            maintenanceIntervalDays: editForm.maintenanceIntervalDays
+              ? parseInt(editForm.maintenanceIntervalDays)
+              : null,
           }),
         })
         if (response.ok) {

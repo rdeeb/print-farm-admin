@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Keep private routes out of crawlers
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /subscribe
+
+Sitemap: https://3dfarmadmin.com/sitemap.xml

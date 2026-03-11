@@ -344,15 +344,15 @@ model Subscription {
 | FARM | Unlimited |
 
 #### Tasks
-- [ ] **T-F5-1** DB: Add `Subscription` model and `PlanTier` enum; run migration; update `api/auth/register` to create TRIAL subscription on signup
-- [ ] **T-F5-2** Install stripe; create `src/lib/stripe.ts` singleton client + plan config constants
-- [ ] **T-F5-3** API: `POST /api/stripe/checkout` — Checkout session creation with success/cancel URLs
-- [ ] **T-F5-4** API: `POST /api/stripe/webhook` — webhook handler with signature verification; update Subscription record on all relevant events
-- [ ] **T-F5-5** API: `POST /api/stripe/portal` + `GET /api/subscription` routes
-- [ ] **T-F5-6** UI: `BillingSection` component in settings page — current plan badge, usage (printers used / limit), portal link, upgrade CTA
-- [ ] **T-F5-7** UI: `/subscribe` plan selection page with monthly/annual toggle and Stripe Checkout redirect
-- [ ] **T-F5-8** Middleware: Trial expiry check + printer count enforcement; `SubscriptionGate` component for soft-limit UI
-- [ ] **T-F5-9** Unit tests for webhook handler (mock Stripe events), subscription status helpers, and plan limit enforcement
+- [x] **T-F5-1** DB: Add `Subscription` model and `PlanTier` enum; run migration; update `api/auth/register` to create TRIAL subscription on signup
+- [x] **T-F5-2** Install stripe; create `src/lib/stripe.ts` singleton client + plan config constants
+- [x] **T-F5-3** API: `POST /api/stripe/checkout` — Checkout session creation with success/cancel URLs
+- [x] **T-F5-4** API: `POST /api/stripe/webhook` — webhook handler with signature verification; update Subscription record on all relevant events
+- [x] **T-F5-5** API: `POST /api/stripe/portal` + `GET /api/subscription` routes
+- [x] **T-F5-6** UI: `BillingSection` component in settings page — current plan badge, usage (printers used / limit), portal link, upgrade CTA
+- [x] **T-F5-7** UI: `/subscribe` plan selection page with monthly/annual toggle and Stripe Checkout redirect
+- [x] **T-F5-8** Middleware: Trial expiry check + printer count enforcement; `SubscriptionGate` component for soft-limit UI
+- [x] **T-F5-9** Unit tests for webhook handler (mock Stripe events), subscription status helpers, and plan limit enforcement
 
 ---
 

@@ -501,14 +501,14 @@ model TenantSettings {
 ```
 
 #### Tasks
-- [ ] **T-F8-1** Install Resend + React Email; create `src/lib/email.ts` wrapper with error handling and dev-mode logging
-- [ ] **T-F8-2** Build `InviteEmail.tsx` and `PasswordResetEmail.tsx` templates; wire into F7 and F0b flows
-- [ ] **T-F8-3** Build `FilamentLowEmail.tsx` template; update `createNotification()` to send email on `FILAMENT_LOW`
-- [ ] **T-F8-4** Build `JobFailedEmail.tsx` template; update `createNotification()` to send email on `JOB_FAILED`
-- [ ] **T-F8-5** Build `OrderOverdueEmail.tsx` template; add overdue check cron-style logic (run on order list load)
-- [ ] **T-F8-6** DB: Add notification preference fields to `TenantSettings`; run migration
-- [ ] **T-F8-7** UI: Notification preferences section in settings page (toggles per type)
-- [ ] **T-F8-8** Unit tests for email template rendering and `sendEmail()` error handling (mock Resend client)
+- [x] **T-F8-1** Install Resend + React Email; create `src/lib/email.ts` wrapper with error handling and dev-mode logging
+- [x] **T-F8-2** Build `InviteEmail.tsx` and `PasswordResetEmail.tsx` templates; wire into F7 and F0b flows
+- [x] **T-F8-3** Build `FilamentLowEmail.tsx` template; update `createNotification()` to send email on `FILAMENT_LOW`
+- [x] **T-F8-4** Build `JobFailedEmail.tsx` template; update `createNotification()` to send email on `JOB_FAILED`
+- [x] **T-F8-5** Build `OrderOverdueEmail.tsx` template; add overdue check cron-style logic (run on order list load)
+- [x] **T-F8-6** DB: Add notification preference fields to `TenantSettings`; run migration
+- [x] **T-F8-7** UI: Notification preferences section in settings page (toggles per type)
+- [x] **T-F8-8** Unit tests for email template rendering and `sendEmail()` error handling (mock Resend client)
 
 ---
 
@@ -530,10 +530,10 @@ model TenantSettings {
 - `src/app/(protected)/analytics/components/PrinterPerformanceTable.tsx`
 
 #### Tasks
-- [ ] **T-F9-1** API: `GET /api/analytics/printer-utilization` — aggregate `PrintJob` by printer + date range
-- [ ] **T-F9-2** UI: `PrinterUtilizationChart` (grouped bar or heatmap using recharts)
-- [ ] **T-F9-3** UI: `PrinterPerformanceTable` — sortable table with per-printer stats; add monthly hours badge to printer cards
-- [ ] **T-F9-4** Unit tests for utilization aggregation query and edge cases (no jobs, overlapping times)
+- [x] **T-F9-1** API: `GET /api/analytics/printer-utilization` — aggregate `PrintJob` by printer + date range
+- [x] **T-F9-2** UI: `PrinterUtilizationChart` (grouped bar or heatmap using recharts)
+- [x] **T-F9-3** UI: `PrinterPerformanceTable` — sortable table with per-printer stats; add monthly hours badge to printer cards
+- [x] **T-F9-4** Unit tests for utilization aggregation query and edge cases (no jobs, overlapping times)
 
 ---
 
@@ -576,11 +576,11 @@ model PrinterMaintenanceLog {
   - Maintenance history list
 
 #### Tasks
-- [ ] **T-F10-1** DB: Add `maintenanceIntervalDays`, `nextMaintenanceDue` to `Printer`; add `PrinterMaintenanceLog` model; run migration
-- [ ] **T-F10-2** API: `GET/POST /api/printers/[id]/maintenance` and `DELETE .../[logId]` routes
-- [ ] **T-F10-3** UI: Maintenance tab in printer detail — log form, history list, next due date display
-- [ ] **T-F10-4** UI: Overdue maintenance badge on printer cards; summary count on dashboard
-- [ ] **T-F10-5** Unit tests for maintenance log creation, next-due auto-calculation, and overdue detection
+- [x] **T-F10-1** DB: Add `maintenanceIntervalDays`, `nextMaintenanceDue` to `Printer`; add `PrinterMaintenanceLog` model; run migration
+- [x] **T-F10-2** API: `GET/POST /api/printers/[id]/maintenance` and `DELETE .../[logId]` routes
+- [x] **T-F10-3** UI: Maintenance tab in printer detail — log form, history list, next due date display
+- [x] **T-F10-4** UI: Overdue maintenance badge on printer cards; summary count on dashboard
+- [x] **T-F10-5** Unit tests for maintenance log creation, next-due auto-calculation, and overdue detection
 
 ---
 
@@ -601,9 +601,9 @@ pnpm add next-pwa
 - `src/app/layout.tsx` — add manifest link tag + viewport meta; include `<OfflineIndicator>`
 
 #### Tasks
-- [ ] **T-F11-1** Install next-pwa; configure `next.config.js`; create `public/manifest.json` with correct metadata
-- [ ] **T-F11-2** Generate all PWA icon sizes; add to `public/icons/`; add offline fallback page
-- [ ] **T-F11-3** Build `OfflineIndicator` component; integrate into root layout; test installability on Chrome/Safari
+- [x] **T-F11-1** Install next-pwa; configure `next.config.js`; create `public/manifest.json` with correct metadata
+- [x] **T-F11-2** Generate all PWA icon sizes; add to `public/icons/`; add offline fallback page
+- [x] **T-F11-3** Build `OfflineIndicator` component; integrate into root layout; test installability on Chrome/Safari
 
 ---
 

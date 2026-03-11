@@ -84,6 +84,9 @@ export async function POST(request: NextRequest) {
       softExpensePostingMode,
       currency,
       defaultLowStockThreshold,
+      notifyFilamentLow,
+      notifyJobFailed,
+      notifyOrderOverdue,
     } = body
 
     const defaultPrintingDays = [
@@ -140,6 +143,9 @@ export async function POST(request: NextRequest) {
             : 'SOFT_ONLY',
         currency: typeof currency === 'string' ? currency : 'USD',
         defaultLowStockThreshold: Math.min(100, Math.max(0, toInt(defaultLowStockThreshold, 20))),
+        notifyFilamentLow: notifyFilamentLow !== false && notifyFilamentLow !== 'false',
+        notifyJobFailed: notifyJobFailed !== false && notifyJobFailed !== 'false',
+        notifyOrderOverdue: notifyOrderOverdue !== false && notifyOrderOverdue !== 'false',
       },
       create: {
         tenantId: session.user.tenantId,
@@ -156,6 +162,9 @@ export async function POST(request: NextRequest) {
             : 'SOFT_ONLY',
         currency: typeof currency === 'string' ? currency : 'USD',
         defaultLowStockThreshold: Math.min(100, Math.max(0, toInt(defaultLowStockThreshold, 20))),
+        notifyFilamentLow: notifyFilamentLow !== false && notifyFilamentLow !== 'false',
+        notifyJobFailed: notifyJobFailed !== false && notifyJobFailed !== 'false',
+        notifyOrderOverdue: notifyOrderOverdue !== false && notifyOrderOverdue !== 'false',
       },
     })
 

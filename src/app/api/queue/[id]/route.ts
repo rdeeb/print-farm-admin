@@ -47,6 +47,7 @@ export async function PATCH(
       },
       include: {
         part: { select: { name: true } },
+        printer: { select: { name: true } },
       },
     })
 
@@ -214,6 +215,11 @@ export async function PATCH(
           type: 'JOB_FAILED',
           message: `Print job for part "${printJob.part.name}" failed${failureReason ? `: ${failureReason}` : ''}.`,
           dedupeKey: params.id,
+          metadata: {
+            jobName: printJob.part.name,
+            printerName: printJob.printer?.name ?? 'Unknown printer',
+            failureReason: failureReason ?? 'No reason provided',
+          },
         })
       } catch (notifError) {
         console.error('Failed to create JOB_FAILED notification:', notifError)

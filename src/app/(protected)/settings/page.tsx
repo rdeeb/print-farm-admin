@@ -16,8 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Building, CalendarDays, DollarSign, Sliders, Save, Coins } from 'lucide-react'
+import { Building, CalendarDays, DollarSign, Sliders, Save, Coins, Bell } from 'lucide-react'
 import { BillingSection } from './components/BillingSection'
+import * as SwitchPrimitive from '@radix-ui/react-switch'
 
 export default function SettingsPage() {
   const { data: session } = useSession()
@@ -47,6 +48,9 @@ export default function SettingsPage() {
     hardwareMultiplier: 1,
     softExpensePostingMode: 'SOFT_ONLY',
     currency: 'USD',
+    notifyFilamentLow: true,
+    notifyJobFailed: true,
+    notifyOrderOverdue: true,
   })
 
   const currencies = [
@@ -107,6 +111,9 @@ export default function SettingsPage() {
             ? 'POST_AS_EXPENSE'
             : 'SOFT_ONLY',
         currency: typeof data.currency === 'string' ? data.currency : 'USD',
+        notifyFilamentLow: typeof data.notifyFilamentLow === 'boolean' ? data.notifyFilamentLow : true,
+        notifyJobFailed: typeof data.notifyJobFailed === 'boolean' ? data.notifyJobFailed : true,
+        notifyOrderOverdue: typeof data.notifyOrderOverdue === 'boolean' ? data.notifyOrderOverdue : true,
       })
     } catch (error) {
       console.error('Error fetching settings:', error)
@@ -434,6 +441,80 @@ export default function SettingsPage() {
                 }))
               }
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            Notification Preferences
+          </CardTitle>
+          <CardDescription>
+            Choose which events trigger email alerts to your admin account
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="notifyFilamentLow" className="text-sm font-medium">
+                Filament Low Alerts
+              </Label>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Receive an email when a filament spool drops below its low-stock threshold
+              </p>
+            </div>
+            <SwitchPrimitive.Root
+              id="notifyFilamentLow"
+              checked={settings.notifyFilamentLow}
+              onCheckedChange={(checked) =>
+                setSettings((prev) => ({ ...prev, notifyFilamentLow: checked }))
+              }
+              className="w-11 h-6 bg-gray-200 rounded-full relative data-[state=checked]:bg-blue-600 outline-none cursor-pointer transition-colors"
+            >
+              <SwitchPrimitive.Thumb className="block w-5 h-5 bg-white rounded-full shadow transition-transform translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[22px]" />
+            </SwitchPrimitive.Root>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="notifyJobFailed" className="text-sm font-medium">
+                Job Failure Alerts
+              </Label>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Receive an email when a print job fails
+              </p>
+            </div>
+            <SwitchPrimitive.Root
+              id="notifyJobFailed"
+              checked={settings.notifyJobFailed}
+              onCheckedChange={(checked) =>
+                setSettings((prev) => ({ ...prev, notifyJobFailed: checked }))
+              }
+              className="w-11 h-6 bg-gray-200 rounded-full relative data-[state=checked]:bg-blue-600 outline-none cursor-pointer transition-colors"
+            >
+              <SwitchPrimitive.Thumb className="block w-5 h-5 bg-white rounded-full shadow transition-transform translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[22px]" />
+            </SwitchPrimitive.Root>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="notifyOrderOverdue" className="text-sm font-medium">
+                Order Overdue Alerts
+              </Label>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Receive an email when an order passes its due date without being completed
+              </p>
+            </div>
+            <SwitchPrimitive.Root
+              id="notifyOrderOverdue"
+              checked={settings.notifyOrderOverdue}
+              onCheckedChange={(checked) =>
+                setSettings((prev) => ({ ...prev, notifyOrderOverdue: checked }))
+              }
+              className="w-11 h-6 bg-gray-200 rounded-full relative data-[state=checked]:bg-blue-600 outline-none cursor-pointer transition-colors"
+            >
+              <SwitchPrimitive.Thumb className="block w-5 h-5 bg-white rounded-full shadow transition-transform translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[22px]" />
+            </SwitchPrimitive.Root>
           </div>
         </CardContent>
       </Card>

@@ -1,5 +1,10 @@
 import { createNotification } from './notifications'
 
+// Mock email module to prevent resend/postal-mime from loading in Jest environment
+jest.mock('@/lib/email', () => ({
+  sendEmail: jest.fn().mockResolvedValue(undefined),
+}))
+
 const mockFindMany = jest.fn()
 const mockCreate = jest.fn()
 

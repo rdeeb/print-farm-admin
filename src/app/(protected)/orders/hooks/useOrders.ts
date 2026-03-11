@@ -192,6 +192,11 @@ export function useOrders() {
     }
 
     fetchData()
+
+    // Fire-and-forget overdue check — triggers notifications without blocking the UI
+    fetch('/api/notifications/check-overdue', { method: 'POST' }).catch(() => {
+      // Intentionally silent — this is a background operation
+    })
   }, [])
 
   useEffect(() => {

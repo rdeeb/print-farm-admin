@@ -7,6 +7,7 @@ interface PrintersGridProps {
   totalPrinterCount: number
   canEdit: boolean
   onEdit: (printer: PrinterData) => void
+  monthlyHoursMap?: Map<string, number>
 }
 
 export function PrintersGrid({
@@ -14,6 +15,7 @@ export function PrintersGrid({
   totalPrinterCount,
   canEdit,
   onEdit,
+  monthlyHoursMap,
 }: PrintersGridProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -23,6 +25,7 @@ export function PrintersGrid({
           printer={printer}
           canEdit={canEdit}
           onEdit={onEdit}
+          monthlyHours={monthlyHoursMap?.get(printer.id)}
         />
       ))}
 

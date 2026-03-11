@@ -7,10 +7,13 @@ import { BarChart3, TrendingUp, Clock, CheckCircle, Package, Printer, AlertCircl
 import { PrinterLoaderIcon } from '@/components/ui/printer-loader-icon'
 import type { AnalyticsData } from '@/model/analytics'
 import type { TimeseriesDataPoint } from '@/types/analytics'
+import type { PrinterUtilizationData } from '@/types/printer-utilization'
 import { OrdersOverTimeChart } from './components/OrdersOverTimeChart'
 import { RevenueOverTimeChart } from './components/RevenueOverTimeChart'
 import { FilamentUsageChart } from './components/FilamentUsageChart'
 import { FailureBreakdownChart, type FailureDataPoint } from './components/FailureBreakdownChart'
+import { PrinterUtilizationChart } from './components/PrinterUtilizationChart'
+import { PrinterPerformanceTable } from './components/PrinterPerformanceTable'
 
 type DateRange = '3m' | '6m' | '12m' | 'ytd'
 
@@ -20,6 +23,17 @@ const DATE_RANGE_OPTIONS: { label: string; value: DateRange }[] = [
   { label: '12M', value: '12m' },
   { label: 'YTD', value: 'ytd' },
 ]
+
+// Map the analytics page date range to the printer-utilization API range param
+function toUtilizationRange(range: DateRange): string {
+  switch (range) {
+    case '3m': return '90d'
+    case '6m': return '180d'
+    case '12m': return '365d'
+    case 'ytd': return '365d'
+    default: return '30d'
+  }
+}
 
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
@@ -33,6 +47,10 @@ export default function AnalyticsPage() {
   const [failureData, setFailureData] = useState<FailureDataPoint[]>([])
   const [failureLoading, setFailureLoading] = useState(true)
   const [failureError, setFailureError] = useState<string | null>(null)
+
+  const [utilizationData, setUtilizationData] = useState<PrinterUtilizationData[]>([])
+  const [utilizationLoading, setUtilizationLoading] = useState(true)
+  const [utilizationError, setUtilizationError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -97,6 +115,30 @@ export default function AnalyticsPage() {
   useEffect(() => {
     fetchFailures()
   }, [fetchFailures])
+
+  const fetchUtilization = useCallback(async (range: DateRange) => {
+    setUtilizationLoading(true)
+    setUtilizationError(null)
+    try {
+      const apiRange = toUtilizationRange(range)
+      const response = await fetch(`/api/analytics/printer-utilization?range=${apiRange}`)
+      if (response.ok) {
+        const data = await response.json()
+        setUtilizationData(data ?? [])
+      } else {
+        setUtilizationError('Failed to load utilization data. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error fetching printer utilization:', error)
+      setUtilizationError('Failed to load utilization data. Please try again.')
+    } finally {
+      setUtilizationLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchUtilization(selectedRange)
+  }, [selectedRange, fetchUtilization])
 
   if (isLoading) {
     return (
@@ -262,19 +304,41 @@ export default function AnalyticsPage() {
               <Printer className="h-5 w-5" />
               Printer Utilization
             </CardTitle>
-            <CardDescription>Usage across all printers</CardDescription>
+            <CardDescription>Hours logged per printer in the selected period</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-center h-[300px] bg-gray-50 rounded-lg">
-              <div className="text-center text-gray-500">
-                <Printer className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                <p className="text-lg font-medium">Chart Coming Soon</p>
-                <p className="text-sm">Printer utilization metrics</p>
-              </div>
-            </div>
+            <PrinterUtilizationChart data={utilizationData} isLoading={utilizationLoading} />
           </CardContent>
         </Card>
       </div>
+
+      {/* Utilization error banner */}
+      {utilizationError && (
+        <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{utilizationError}</span>
+          <button
+            onClick={() => fetchUtilization(selectedRange)}
+            className="ml-auto underline underline-offset-2 hover:no-underline"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Printer Performance Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Printer className="h-5 w-5" />
+            Printer Performance
+          </CardTitle>
+          <CardDescription>Per-printer job statistics for the selected period</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PrinterPerformanceTable data={utilizationData} />
+        </CardContent>
+      </Card>
 
       {/* Failure analytics error banner */}
       {failureError && (

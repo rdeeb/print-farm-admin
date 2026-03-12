@@ -20,33 +20,117 @@ import {
   Wrench,
   Wallet,
 } from 'lucide-react'
-import type { NavigationItem } from '@/model/navigation'
+import type { NavigationItem, NavigationSection } from '@/model/navigation'
 
-const navigation: NavigationItem[] = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Orders', href: '/orders', icon: FileText },
-  { name: 'Clients', href: '/clients', icon: UserCircle },
-  { name: 'Projects', href: '/projects', icon: Box },
-  { name: 'Print Queue', href: '/queue', icon: ListOrdered },
-  { name: 'Printers', href: '/printers', icon: Printer },
-  { name: 'Materials', href: '/filament', icon: Package },
-  { name: 'Finance', href: '/finance', icon: Wallet },
-  { name: 'Hardware', href: '/hardware', icon: Wrench },
-  { name: 'Inventory', href: '/inventory', icon: Building2 },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Calendar', href: '/calendar', icon: Calendar },
-  { name: 'Users', href: '/users', icon: Users, roles: ['ADMIN'] },
-  { name: 'Settings', href: '/settings', icon: Settings, roles: ['ADMIN'] },
+function navItem(
+  name: string,
+  href: string,
+  icon: NavigationItem['icon'],
+  roles?: string[]
+): NavigationItem {
+  return { name, href, icon, ...(roles?.length ? { roles } : {}) }
+}
+
+const navigationSections: NavigationSection[] = [
+  { type: 'item', item: navItem('Dashboard', '/dashboard', Home) },
+  {
+    type: 'group',
+    group: {
+      label: 'Business',
+      items: [
+        navItem('Orders', '/orders', FileText),
+        navItem('Clients', '/clients', UserCircle),
+        navItem('Projects', '/projects', Box),
+      ],
+    },
+  },
+  {
+    type: 'group',
+    group: {
+      label: 'Production',
+      items: [
+        navItem('Print Queue', '/queue', ListOrdered),
+        navItem('Printers', '/printers', Printer),
+        navItem('Materials', '/filament', Package),
+      ],
+    },
+  },
+  {
+    type: 'group',
+    group: {
+      label: 'Resources',
+      items: [
+        navItem('Hardware', '/hardware', Wrench),
+        navItem('Inventory', '/inventory', Building2),
+      ],
+    },
+  },
+  {
+    type: 'group',
+    group: {
+      label: 'Finance & insights',
+      items: [
+        navItem('Finance', '/finance', Wallet),
+        navItem('Analytics', '/analytics', BarChart3),
+      ],
+    },
+  },
+  {
+    type: 'group',
+    group: {
+      label: 'Planning',
+      items: [navItem('Calendar', '/calendar', Calendar)],
+    },
+  },
+  {
+    type: 'group',
+    group: {
+      label: 'Administration',
+      items: [
+        navItem('Users', '/users', Users, ['ADMIN']),
+        navItem('Settings', '/settings', Settings, ['ADMIN']),
+      ],
+    },
+  },
 ]
 
 export function Sidebar() {
   const { data: session } = useSession()
   const pathname = usePathname()
 
-  const filteredNavigation = navigation.filter(item => {
-    if (!item.roles) return true
-    return item.roles.includes(session?.user?.role || '')
-  })
+  const userRole = session?.user?.role || ''
+
+  const filterItemsByRole = (items: NavigationItem[]) =>
+    items.filter(item => {
+      if (!item.roles) return true
+      return item.roles.includes(userRole)
+    })
+
+  const renderNavLink = (item: NavigationItem) => {
+    const isActive = pathname === item.href
+    return (
+      <Link
+        key={item.name}
+        href={item.href}
+        className={cn(
+          'group flex items-center px-2 py-2 text-sm font-medium rounded-md',
+          isActive
+            ? 'bg-gray-900 text-white'
+            : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+        )}
+      >
+        <item.icon
+          className={cn(
+            'mr-3 flex-shrink-0 h-5 w-5',
+            isActive
+              ? 'text-gray-300'
+              : 'text-gray-400 group-hover:text-gray-300'
+          )}
+        />
+        {item.name}
+      </Link>
+    )
+  }
 
   return (
     <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
@@ -69,30 +153,26 @@ export function Sidebar() {
               </div>
             </div>
           </div>
-          <nav className="mt-8 flex-1 px-2 space-y-1">
-            {filteredNavigation.map((item) => {
-              const isActive = pathname === item.href
+          <nav className="mt-8 flex-1 px-2 space-y-6">
+            {navigationSections.map((section, sectionIndex) => {
+              if (section.type === 'item') {
+                if (section.item.roles && !section.item.roles.includes(userRole))
+                  return null
+                return (
+                  <div key={section.item.name}>{renderNavLink(section.item)}</div>
+                )
+              }
+              const filtered = filterItemsByRole(section.group.items)
+              if (filtered.length === 0) return null
               return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    'group flex items-center px-2 py-2 text-sm font-medium rounded-md',
-                    isActive
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                  )}
-                >
-                  <item.icon
-                    className={cn(
-                      'mr-3 flex-shrink-0 h-5 w-5',
-                      isActive
-                        ? 'text-gray-300'
-                        : 'text-gray-400 group-hover:text-gray-300'
-                    )}
-                  />
-                  {item.name}
-                </Link>
+                <div key={section.group.label}>
+                  <h3 className="px-2 mb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    {section.group.label}
+                  </h3>
+                  <div className="space-y-1">
+                    {filtered.map(item => renderNavLink(item))}
+                  </div>
+                </div>
               )
             })}
           </nav>

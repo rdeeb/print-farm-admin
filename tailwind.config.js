@@ -17,6 +17,25 @@ module.exports = {
     },
     extend: {
       colors: {
+        // PrintFleet landing palette (dark SaaS)
+        pf: {
+          bg: "#0a0a0f",
+          surface: "#12121a",
+          card: "#16161f",
+          border: "#252532",
+          muted: "#6b7280",
+          "muted-light": "#9ca3af",
+          white: "#f4f4f5",
+          blue: "#3b82f6",
+          "blue-glow": "rgba(59, 130, 246, 0.15)",
+          cyan: "#22d3ee",
+          "cyan-glow": "rgba(34, 211, 238, 0.12)",
+          purple: "#a78bfa",
+          "purple-glow": "rgba(167, 139, 250, 0.1)",
+          success: "#22c55e",
+          warning: "#f59e0b",
+          error: "#ef4444",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

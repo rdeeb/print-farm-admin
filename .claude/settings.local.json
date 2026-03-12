@@ -28,7 +28,16 @@
       "WebSearch",
       "Bash(powershell -c \"[console]::beep\\(880,200\\); [console]::beep\\(1100,300\\)\")",
       "Bash(ls -la /c/Users/rdeeb/Development/3d-farm-admin/src/app/\\\\\\(protected\\\\\\)/ | head -20)",
-      "Bash(grep -r \"email\\\\|nodemailer\\\\|resend\\\\|sendgrid\\\\|smtp\" /c/Users/rdeeb/Development/3d-farm-admin/package.json /c/Users/rdeeb/Development/3d-farm-admin/src/lib/ --include=\"*.ts\" --include=\"*.json\" 2>/dev/null | head -20)"
+      "Bash(grep -r \"email\\\\|nodemailer\\\\|resend\\\\|sendgrid\\\\|smtp\" /c/Users/rdeeb/Development/3d-farm-admin/package.json /c/Users/rdeeb/Development/3d-farm-admin/src/lib/ --include=\"*.ts\" --include=\"*.json\" 2>/dev/null | head -20)",
+      "Bash(cd \"C:/Users/rdeeb/Development/3d-farm-admin\" && pnpm run type-check 2>&1)",
+      "Bash(cd \"C:/Users/rdeeb/Development/3d-farm-admin\" && pnpm run type-check 2>&1 && echo \"TYPE-CHECK PASSED\")",
+      "Bash(ls \"C:/Users/rdeeb/Development/3d-farm-admin/src/app/\\(protected\\)/queue/components/\")",
+      "Bash(cd \"/c/Users/rdeeb/Development/3d-farm-admin\" && pnpm run type-check 2>&1 | tail -20)",
+      "Bash(cd \"C:/Users/rdeeb/Development/3d-farm-admin\" && pnpm run type-check 2>&1 | tail -40)",
+      "Bash(pnpm jest:*)",
+      "Bash(pnpm run:*)",
+      "Bash(npx tsc:*)",
+      "Bash(find /c/Users/rdeeb/Development/3d-farm-admin/node_modules/stripe -name \"*.d.ts\" 2>/dev/null | head -10)"
     ]
   }
 }

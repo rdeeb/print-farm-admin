@@ -36,15 +36,28 @@ describe('Sidebar', () => {
     expect(screen.getByText('test@example.com')).toBeInTheDocument()
   })
 
+  it('renders navigation groups with labels', () => {
+    render(<Sidebar />)
+    expect(screen.getByText('Business')).toBeInTheDocument()
+    expect(screen.getByText('Production')).toBeInTheDocument()
+    expect(screen.getByText('Resources')).toBeInTheDocument()
+    expect(screen.getByText('Finance & insights')).toBeInTheDocument()
+    expect(screen.getByText('Planning')).toBeInTheDocument()
+    expect(screen.getByText('Administration')).toBeInTheDocument()
+  })
+
   it('renders all navigation items for admin user', () => {
     render(<Sidebar />)
 
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
     expect(screen.getByText('Orders')).toBeInTheDocument()
+    expect(screen.getByText('Clients')).toBeInTheDocument()
     expect(screen.getByText('Projects')).toBeInTheDocument()
     expect(screen.getByText('Print Queue')).toBeInTheDocument()
     expect(screen.getByText('Printers')).toBeInTheDocument()
     expect(screen.getByText('Materials')).toBeInTheDocument()
+    expect(screen.getByText('Finance')).toBeInTheDocument()
+    expect(screen.getByText('Hardware')).toBeInTheDocument()
     expect(screen.getByText('Inventory')).toBeInTheDocument()
     expect(screen.getByText('Analytics')).toBeInTheDocument()
     expect(screen.getByText('Calendar')).toBeInTheDocument()

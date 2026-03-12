@@ -63,6 +63,8 @@ const EnvelopeBaseSchema = z.object({
   timestamp: z.string().datetime({ message: 'timestamp must be ISO 8601' }),
   tenantId: z.string().min(1),
   printerExternalId: z.string().min(1),
+  // assigned by server after WebSocket handshake; optional until server provides it
+  connectorSessionId: z.string().min(1).optional(),
 })
 
 // ---------------------------------------------------------------------------
@@ -134,6 +136,7 @@ export const PrinterTelemetryPayloadSchema = z
     bedTempC: z.number().min(-30).max(200).optional(),
     // Change 9: use shared ProgressPercentSchema
     progressPercent: ProgressPercentSchema.optional(),
+    remainingSeconds: z.number().int().nonnegative().optional(),
     fanSpeedPercent: z.number().min(0).max(100).optional(),
     currentLayer: z.number().int().nonnegative().optional(),
     totalLayers: z.number().int().nonnegative().optional(),
@@ -207,6 +210,8 @@ export type ConnectorMessage = z.infer<typeof ConnectorMessageSchema>
 // Change 14: removed printerExternalId from promote/demote payloads (DB UUID only)
 export const ReporterPromotePayloadSchema = z.object({
   printerId: z.string().min(1),
+  leaseExpiresAt: z.string().datetime(),
+  heartbeatIntervalSeconds: z.number().int().positive(),
 })
 export type ReporterPromotePayload = z.infer<typeof ReporterPromotePayloadSchema>
 
@@ -255,6 +260,21 @@ export const AssignmentsUpdateMessageSchema = ServerEnvelopeBaseSchema.extend({
 })
 export type AssignmentsUpdateMessage = z.infer<typeof AssignmentsUpdateMessageSchema>
 
+const HeartbeatAckPayloadSchema = z.object({
+  leaseExpiresAt: z.string().datetime(),
+  heartbeatIntervalSeconds: z.number().int().positive(),
+  reporterRole: ReporterRoleSchema.optional(),
+})
+
+export type HeartbeatAckPayload = z.infer<typeof HeartbeatAckPayloadSchema>
+
+export const HeartbeatAckMessageSchema = ServerEnvelopeBaseSchema.extend({
+  type: z.literal('heartbeat.ack'),
+  payload: HeartbeatAckPayloadSchema,
+})
+
+export type HeartbeatAckMessage = z.infer<typeof HeartbeatAckMessageSchema>
+
 // ---------------------------------------------------------------------------
 // Server → Client discriminated union
 // ---------------------------------------------------------------------------
@@ -263,6 +283,7 @@ export const ServerControlMessageSchema = z.discriminatedUnion('type', [
   ReporterPromoteMessageSchema,
   ReporterDemoteMessageSchema,
   AssignmentsUpdateMessageSchema,
+  HeartbeatAckMessageSchema,
 ])
 export type ServerControlMessage = z.infer<typeof ServerControlMessageSchema>
 

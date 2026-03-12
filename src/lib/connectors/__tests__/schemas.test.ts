@@ -14,6 +14,7 @@ import {
   AssignmentsUpdateMessageSchema,
   ConnectorMessageSchema,
   ServerControlMessageSchema,
+  HeartbeatAckMessageSchema,
   SCHEMA_VERSION,
 } from '../schemas'
 
@@ -140,6 +141,18 @@ describe('HeartbeatMessageSchema', () => {
     expect(() =>
       HeartbeatMessageSchema.parse({ ...valid, payload: { ...valid.payload, fingerprint: maxFingerprint } })
     ).not.toThrow()
+  })
+
+  // connectorSessionId is optional in EnvelopeBaseSchema
+  it('parses a heartbeat message with connectorSessionId', () => {
+    const withSession = { ...valid, connectorSessionId: 'sess_abc123' }
+    const result = HeartbeatMessageSchema.parse(withSession)
+    expect(result.connectorSessionId).toBe('sess_abc123')
+  })
+
+  it('parses a heartbeat message without connectorSessionId (it is optional)', () => {
+    const result = HeartbeatMessageSchema.parse(valid)
+    expect(result.connectorSessionId).toBeUndefined()
   })
 })
 
@@ -389,6 +402,44 @@ describe('PrinterTelemetryMessageSchema', () => {
       PrinterTelemetryMessageSchema.parse({ ...BASE_ENVELOPE, type: 'printer.telemetry', payload: { bedTempC: 200 } })
     ).not.toThrow()
   })
+
+  it('parses a telemetry message with remainingSeconds: 120', () => {
+    const result = PrinterTelemetryMessageSchema.parse({
+      ...BASE_ENVELOPE,
+      type: 'printer.telemetry',
+      payload: { remainingSeconds: 120 },
+    })
+    expect(result.payload.remainingSeconds).toBe(120)
+  })
+
+  it('accepts remainingSeconds: 0 (zero is nonnegative)', () => {
+    expect(() =>
+      PrinterTelemetryMessageSchema.parse({
+        ...BASE_ENVELOPE,
+        type: 'printer.telemetry',
+        payload: { remainingSeconds: 0 },
+      })
+    ).not.toThrow()
+  })
+
+  it('rejects negative remainingSeconds', () => {
+    expect(() =>
+      PrinterTelemetryMessageSchema.parse({
+        ...BASE_ENVELOPE,
+        type: 'printer.telemetry',
+        payload: { remainingSeconds: -1 },
+      })
+    ).toThrow(ZodError)
+  })
+
+  it('parses a telemetry message with only remainingSeconds (single-field minimum)', () => {
+    const result = PrinterTelemetryMessageSchema.parse({
+      ...BASE_ENVELOPE,
+      type: 'printer.telemetry',
+      payload: { remainingSeconds: 300 },
+    })
+    expect(result.payload.remainingSeconds).toBe(300)
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -517,13 +568,19 @@ describe('ReporterPromoteMessageSchema', () => {
   const valid = {
     ...SERVER_ENVELOPE,
     type: 'reporter.promote',
-    payload: { printerId: 'printer-uuid-1' },
+    payload: {
+      printerId: 'printer-uuid-1',
+      leaseExpiresAt: '2026-03-11T12:00:45.000Z',
+      heartbeatIntervalSeconds: 15,
+    },
   }
 
   it('parses a valid reporter.promote message', () => {
     const result = ReporterPromoteMessageSchema.parse(valid)
     expect(result.type).toBe('reporter.promote')
     expect(result.payload.printerId).toBe('printer-uuid-1')
+    expect(result.payload.leaseExpiresAt).toBe('2026-03-11T12:00:45.000Z')
+    expect(result.payload.heartbeatIntervalSeconds).toBe(15)
   })
 
   it('rejects missing printerId', () => {
@@ -534,6 +591,20 @@ describe('ReporterPromoteMessageSchema', () => {
   it('does not require printerExternalId in envelope', () => {
     // SERVER_ENVELOPE has no printerExternalId — message should still parse
     expect(() => ReporterPromoteMessageSchema.parse(valid)).not.toThrow()
+  })
+
+  it('rejects promote message without leaseExpiresAt', () => {
+    const { leaseExpiresAt: _l, ...payloadWithout } = valid.payload
+    expect(() =>
+      ReporterPromoteMessageSchema.parse({ ...valid, payload: payloadWithout })
+    ).toThrow(ZodError)
+  })
+
+  it('rejects promote message without heartbeatIntervalSeconds', () => {
+    const { heartbeatIntervalSeconds: _h, ...payloadWithout } = valid.payload
+    expect(() =>
+      ReporterPromoteMessageSchema.parse({ ...valid, payload: payloadWithout })
+    ).toThrow(ZodError)
   })
 })
 
@@ -605,12 +676,68 @@ describe('AssignmentsUpdateMessageSchema', () => {
   })
 })
 
+// ---------------------------------------------------------------------------
+// heartbeat.ack
+// ---------------------------------------------------------------------------
+
+describe('HeartbeatAckMessageSchema', () => {
+  const valid = {
+    ...SERVER_ENVELOPE,
+    type: 'heartbeat.ack',
+    payload: {
+      leaseExpiresAt: '2026-03-11T12:00:45.000Z',
+      heartbeatIntervalSeconds: 15,
+    },
+  }
+
+  it('parses a valid heartbeat.ack with required fields', () => {
+    const result = HeartbeatAckMessageSchema.parse(valid)
+    expect(result.type).toBe('heartbeat.ack')
+    expect(result.payload.leaseExpiresAt).toBe('2026-03-11T12:00:45.000Z')
+    expect(result.payload.heartbeatIntervalSeconds).toBe(15)
+  })
+
+  it('accepts optional reporterRole field', () => {
+    const withRole = { ...valid, payload: { ...valid.payload, reporterRole: 'ACTIVE' } }
+    const result = HeartbeatAckMessageSchema.parse(withRole)
+    expect(result.payload.reporterRole).toBe('ACTIVE')
+  })
+
+  it('parses without optional reporterRole', () => {
+    const result = HeartbeatAckMessageSchema.parse(valid)
+    expect(result.payload.reporterRole).toBeUndefined()
+  })
+
+  it('rejects missing leaseExpiresAt', () => {
+    const { leaseExpiresAt: _l, ...payloadWithout } = valid.payload
+    expect(() =>
+      HeartbeatAckMessageSchema.parse({ ...valid, payload: payloadWithout })
+    ).toThrow(ZodError)
+  })
+
+  it('rejects missing heartbeatIntervalSeconds', () => {
+    const { heartbeatIntervalSeconds: _h, ...payloadWithout } = valid.payload
+    expect(() =>
+      HeartbeatAckMessageSchema.parse({ ...valid, payload: payloadWithout })
+    ).toThrow(ZodError)
+  })
+
+  it('rejects non-positive heartbeatIntervalSeconds', () => {
+    expect(() =>
+      HeartbeatAckMessageSchema.parse({ ...valid, payload: { ...valid.payload, heartbeatIntervalSeconds: 0 } })
+    ).toThrow(ZodError)
+    expect(() =>
+      HeartbeatAckMessageSchema.parse({ ...valid, payload: { ...valid.payload, heartbeatIntervalSeconds: -5 } })
+    ).toThrow(ZodError)
+  })
+})
+
 describe('ServerControlMessageSchema (discriminated union)', () => {
   it('routes reporter.promote', () => {
     const msg = {
       ...SERVER_ENVELOPE,
       type: 'reporter.promote',
-      payload: { printerId: 'p1' },
+      payload: { printerId: 'p1', leaseExpiresAt: '2026-03-11T12:00:45.000Z', heartbeatIntervalSeconds: 15 },
     }
     const result = ServerControlMessageSchema.parse(msg)
     expect(result.type).toBe('reporter.promote')
@@ -636,6 +763,16 @@ describe('ServerControlMessageSchema (discriminated union)', () => {
     }
     const result = ServerControlMessageSchema.parse(msg)
     expect(result.type).toBe('assignments.update')
+  })
+
+  it('routes heartbeat.ack', () => {
+    const msg = {
+      ...SERVER_ENVELOPE,
+      type: 'heartbeat.ack',
+      payload: { leaseExpiresAt: '2026-03-11T12:00:45.000Z', heartbeatIntervalSeconds: 15 },
+    }
+    const result = ServerControlMessageSchema.parse(msg)
+    expect(result.type).toBe('heartbeat.ack')
   })
 
   it('rejects a client message type (heartbeat)', () => {
@@ -744,7 +881,7 @@ describe('parseServerControlMessage', () => {
     const raw = {
       ...SERVER_ENVELOPE,
       type: 'reporter.promote',
-      payload: { printerId: 'p1' },
+      payload: { printerId: 'p1', leaseExpiresAt: '2026-03-11T12:00:45.000Z', heartbeatIntervalSeconds: 15 },
     }
     const result = parseServerControlMessage(raw)
     expect(result.type).toBe('reporter.promote')
@@ -814,7 +951,7 @@ describe('safeParseServerControlMessage', () => {
     const raw = {
       ...SERVER_ENVELOPE,
       type: 'reporter.promote',
-      payload: { printerId: 'p1' },
+      payload: { printerId: 'p1', leaseExpiresAt: '2026-03-11T12:00:45.000Z', heartbeatIntervalSeconds: 15 },
     }
     const result = safeParseServerControlMessage(raw)
     expect(result.success).toBe(true)

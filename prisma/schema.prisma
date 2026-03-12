@@ -64,6 +64,15 @@ model Tenant {
   hardware             Hardware[]
   financeLedgerEntries FinanceLedgerEntry[]
   subscription         Subscription?
+  printerConnections   PrinterConnection[]
+  connectorAgents      ConnectorAgent[]
+  connectorSessions    ConnectorSession[]
+  printerEvents        PrinterEvent[]
+  printerLiveStates    PrinterLiveState[]
+  connectorTokens      ConnectorToken[]
+  printerReporterLeases PrinterReporterLease[]
+  printFiles           PrintFile[]
+  partPrintFiles       PartPrintFile[]
 
   @@map("tenants")
 }
@@ -111,6 +120,8 @@ model User {
   accounts Account[]
   sessions Session[]
   passwordResetTokens PasswordResetToken[]
+
+  connectorTokens  ConnectorToken[]
 
   // Created entities
   createdProjects  Project[]  @relation("CreatedBy")
@@ -263,11 +274,12 @@ model ProjectPart {
   updatedAt            DateTime @updatedAt
 
   // Relations
-  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  filamentColor FilamentColor? @relation(fields: [filamentColorId], references: [id])
-  spool         FilamentSpool? @relation(fields: [spoolId], references: [id])
-  printJobs     PrintJob[]
-  OrderPart     OrderPart[]
+  project           Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  filamentColor     FilamentColor? @relation(fields: [filamentColorId], references: [id])
+  spool             FilamentSpool? @relation(fields: [spoolId], references: [id])
+  printJobs         PrintJob[]
+  OrderPart         OrderPart[]
+  printFileMappings PartPrintFile[]
 
   @@map("project_parts")
 }
@@ -422,9 +434,13 @@ model Printer {
   nextMaintenanceDue      DateTime?
 
   // Relations
-  tenant          Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  printJobs       PrintJob[]
-  maintenanceLogs PrinterMaintenanceLog[]
+  tenant             Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  printJobs          PrintJob[]
+  maintenanceLogs    PrinterMaintenanceLog[]
+  printerConnections PrinterConnection[]
+  printerEvents      PrinterEvent[]
+  liveState          PrinterLiveState?
+  reporterLease      PrinterReporterLease?
 
   @@index([tenantId, nextMaintenanceDue])
   @@map("printers")
@@ -670,4 +686,245 @@ model WishlistRegistration {
   doublePrintersBreak String? @db.Text
 
   @@map("wishlist_registrations")
+}
+
+// Printer Connectivity
+
+enum PrinterPlatform {
+  BAMBU_LAB
+}
+
+enum ConnectorRuntime {
+  WEB_APP
+  CHROME_EXTENSION
+  GO_AGENT
+}
+
+enum ConnectorAuthType {
+  SESSION
+  API_TOKEN
+}
+
+enum PrinterEventType {
+  STATUS_CHANGED
+  PRINT_STARTED
+  PRINT_PROGRESS
+  PRINT_PAUSED
+  PRINT_RESUMED
+  PRINT_COMPLETED
+  PRINT_FAILED
+  PRINT_CANCELLED
+  CONNECTOR_CONNECTED
+  CONNECTOR_DISCONNECTED
+  ERROR
+}
+
+enum ConnectionState {
+  CONNECTED
+  DISCONNECTED
+  RECONNECTING
+  UNHEALTHY
+}
+
+enum BambuAccessMode {
+  LOCAL_FULL
+  READ_ONLY_FALLBACK
+}
+
+model PrinterConnection {
+  id                   String          @id @default(cuid())
+  tenantId             String
+  printerId            String
+  platform             PrinterPlatform
+  host                 String?
+  port                 Int?
+  path                 String?
+  useTls               Boolean         @default(false)
+  authType             ConnectorAuthType?
+  accessMode           BambuAccessMode?
+  credentialsEncrypted Json?
+  capabilities         Json?
+  isEnabled            Boolean         @default(true)
+  lastValidatedAt      DateTime?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  printer Printer @relation(fields: [printerId], references: [id], onDelete: Cascade)
+
+  @@unique([printerId, platform])
+  @@index([tenantId, platform, isEnabled])
+  @@index([printerId])
+  @@map("printer_connections")
+}
+
+model ConnectorAgent {
+  id          String           @id @default(cuid())
+  tenantId    String
+  runtime     ConnectorRuntime
+  name        String
+  fingerprint String
+  version     String?
+  lastSeenAt  DateTime?
+  isRevoked   Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  tenant         Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sessions       ConnectorSession[]
+  tokens         ConnectorToken[]
+  reporterLeases PrinterReporterLease[]
+
+  @@unique([tenantId, fingerprint])
+  @@index([tenantId, runtime, isRevoked])
+  @@map("connector_agents")
+}
+
+model ConnectorSession {
+  id               String          @id @default(cuid())
+  tenantId         String
+  connectorAgentId String
+  connectedAt      DateTime        @default(now())
+  disconnectedAt   DateTime?
+  disconnectReason String?
+  remoteAddr       String?
+  userAgent        String?
+  state            ConnectionState @default(CONNECTED)
+  stats            Json?
+
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connectorAgent ConnectorAgent @relation(fields: [connectorAgentId], references: [id], onDelete: Cascade)
+  printerEvents  PrinterEvent[]
+
+  @@index([tenantId, connectedAt(sort: Desc)])
+  @@index([connectorAgentId, connectedAt(sort: Desc)])
+  @@index([tenantId, connectorAgentId, connectedAt(sort: Desc)])
+  @@map("connector_sessions")
+}
+
+model PrinterEvent {
+  id                 String           @id @default(cuid())
+  tenantId           String
+  printerId          String
+  connectorSessionId String?
+  eventType          PrinterEventType
+  printerStatus      PrinterStatus?
+  platformJobId      String?
+  fileName           String?
+  payload            Json
+  occurredAt         DateTime
+  ingestedAt         DateTime         @default(now())
+
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  printer          Printer           @relation(fields: [printerId], references: [id], onDelete: Restrict)
+  connectorSession ConnectorSession? @relation(fields: [connectorSessionId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, printerId, occurredAt(sort: Desc)])
+  @@index([tenantId, eventType, occurredAt(sort: Desc)])
+  @@index([platformJobId])
+  @@map("printer_events")
+}
+
+model PrinterLiveState {
+  printerId       String        @id
+  tenantId        String
+  status          PrinterStatus @default(OFFLINE)
+  platformJobId    String?
+  fileName         String?
+  progressPercent  Int?
+  remainingSeconds Int?
+  lastHeartbeatAt  DateTime?
+  lastError        String?
+  updatedAt        DateTime      @updatedAt
+
+  printer Printer @relation(fields: [printerId], references: [id], onDelete: Cascade)
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@index([tenantId, updatedAt(sort: Desc)])
+  @@map("printer_live_states")
+}
+
+model ConnectorToken {
+  id               String    @id @default(cuid())
+  tenantId         String
+  connectorAgentId String?
+  name             String
+  tokenHash        String
+  prefix           String
+  scopes           Json
+  expiresAt        DateTime?
+  lastUsedAt       DateTime?
+  revokedAt        DateTime?
+  createdByUserId  String
+  createdAt        DateTime  @default(now())
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connectorAgent ConnectorAgent? @relation(fields: [connectorAgentId], references: [id], onDelete: SetNull)
+  createdBy      User            @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([tokenHash])
+  @@index([tenantId, expiresAt])
+  @@map("connector_tokens")
+}
+
+model PrinterReporterLease {
+  id                     String   @id @default(cuid())
+  tenantId               String
+  printerId              String
+  activeConnectorAgentId String
+  leaseVersion           Int      @default(1)
+  leaseExpiresAt         DateTime
+  lastSwitchReason       String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  tenant               Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  printer              Printer        @relation(fields: [printerId], references: [id], onDelete: Cascade)
+  activeConnectorAgent ConnectorAgent @relation(fields: [activeConnectorAgentId], references: [id], onDelete: Restrict)
+
+  @@unique([printerId])
+  @@index([tenantId, leaseExpiresAt])
+  @@map("printer_reporter_leases")
+}
+
+model PrintFile {
+  id             String           @id @default(cuid())
+  tenantId       String
+  name           String
+  storageType    String
+  storageRef     String
+  platform       PrinterPlatform?
+  externalFileId String?
+  notes          String?
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  tenant       Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  partMappings PartPrintFile[]
+
+  @@index([tenantId, isActive, updatedAt(sort: Desc)])
+  @@index([tenantId, platform, externalFileId])
+  @@map("print_files")
+}
+
+model PartPrintFile {
+  id          String   @id @default(cuid())
+  tenantId    String
+  partId      String
+  printFileId String
+  unitsPerRun Int      // must be >= 1; enforced at the application layer
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant    Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  part      ProjectPart @relation(fields: [partId], references: [id], onDelete: Cascade)
+  printFile PrintFile   @relation(fields: [printFileId], references: [id], onDelete: Restrict)
+
+  @@unique([partId, printFileId])
+  @@index([tenantId, partId])
+  @@index([tenantId, printFileId])
+  @@map("part_print_files")
 }

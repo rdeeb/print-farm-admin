@@ -18,6 +18,8 @@
     "db:backfill:material-finance": "tsx prisma/backfill-material-finance.ts",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
+    "dev:ws": "tsx server.ts",
+    "start:ws": "NODE_ENV=production tsx server.ts",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f"
@@ -62,6 +64,7 @@
     "stripe": "^20.4.1",
     "tailwind-merge": "^2.2.1",
     "tailwindcss-animate": "^1.0.7",
+    "ws": "^8.19.0",
     "zod": "^3.22.4",
     "zustand": "^4.5.0"
   },
@@ -75,6 +78,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/ws": "^8.18.1",
     "autoprefixer": "^10.0.1",
     "eslint": "^8",
     "eslint-config-next": "14.1.0",

@@ -8,6 +8,7 @@ import { z } from 'zod'
 const checkoutSchema = z.object({
   tier: z.enum(['SOLO', 'SHOP', 'FARM']),
   interval: z.enum(['monthly', 'annual']),
+  discountCode: z.string().optional(),
 })
 
 export async function POST(request: Request) {
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
       return apiError('BAD_REQUEST', message, 400)
     }
 
-    const { tier, interval } = parsed.data
+    const { tier, interval, discountCode } = parsed.data
 
     // #7: Resolve price ID server-side only from PLAN_CONFIG — never from client input
     const config = PLAN_CONFIG[tier]
@@ -64,6 +65,45 @@ export async function POST(request: Request) {
     const appUrl = process.env.NEXTAUTH_URL
     if (!appUrl) throw new Error('NEXTAUTH_URL is not configured')
 
+    // Resolve discount coupon if a code was provided
+    let stripeCouponId: string | undefined
+    if (discountCode) {
+      const discount = await prisma.discountCode.findUnique({
+        where: { code: discountCode.toUpperCase().trim() },
+      })
+      if (
+        discount &&
+        discount.isActive &&
+        (discount.maxUses === null || discount.usedCount < discount.maxUses) &&
+        (discount.expiresAt === null || discount.expiresAt > new Date())
+      ) {
+        if (!discount.stripeCouponId) {
+          const coupon = await getStripe().coupons.create({
+            percent_off: discount.discountPercent,
+            duration: discount.durationMonths ? 'repeating' : 'forever',
+            ...(discount.durationMonths ? { duration_in_months: discount.durationMonths } : {}),
+            name: `Early Access ${discount.discountPercent}% off`,
+          })
+          await prisma.discountCode.update({
+            where: { id: discount.id },
+            data: { stripeCouponId: coupon.id },
+          })
+          stripeCouponId = coupon.id
+        } else {
+          stripeCouponId = discount.stripeCouponId
+        }
+        // Reserve the code against this tenant to prevent parallel redemptions
+        await prisma.discountCode.update({
+          where: { id: discount.id },
+          data: {
+            usedCount: { increment: 1 },
+            redeemedAt: new Date(),
+            redeemedByTenantId: session.user.tenantId,
+          },
+        })
+      }
+    }
+
     const checkoutSession = await getStripe().checkout.sessions.create({
       mode: 'subscription',
       customer: subscription.stripeCustomerId,
@@ -73,6 +113,7 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
+      ...(stripeCouponId ? { discounts: [{ coupon: stripeCouponId }] } : {}),
       success_url: `${appUrl}/settings?billing=success`,
       cancel_url: `${appUrl}/subscribe?billing=cancelled`,
       subscription_data: {

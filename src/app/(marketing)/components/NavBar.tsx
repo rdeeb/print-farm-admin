@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
+const registrationEnabled = process.env.NEXT_PUBLIC_REGISTRATION_ENABLED === 'true'
+
 export function NavBar() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -45,27 +47,39 @@ export function NavBar() {
               How It Works
             </Link>
             <Link
-              href="#pricing"
+              href="#early-access"
               className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
             >
-              Pricing
+              Early Access
             </Link>
           </div>
 
           {/* Desktop CTAs */}
           <div className="hidden md:flex items-center gap-3">
-            <Link
-              href="/auth/signin"
-              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors px-3 py-2"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/auth/register"
-              className="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-            >
-              Start Free Trial
-            </Link>
+            {registrationEnabled && (
+              <>
+                <Link
+                  href="/auth/signin"
+                  className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors px-3 py-2"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/register"
+                  className="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                >
+                  Start Free Trial
+                </Link>
+              </>
+            )}
+            {!registrationEnabled && (
+              <Link
+                href="#early-access"
+                className="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+              >
+                Get Early Access
+              </Link>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -106,25 +120,37 @@ export function NavBar() {
             How It Works
           </Link>
           <Link
-            href="#pricing"
+            href="#early-access"
             className="block text-sm font-medium text-gray-700 hover:text-gray-900 py-1"
             onClick={() => setMobileOpen(false)}
           >
-            Pricing
+            Early Access
           </Link>
           <div className="pt-2 border-t border-gray-100 flex flex-col gap-2">
-            <Link
-              href="/auth/signin"
-              className="block text-sm font-medium text-gray-700 hover:text-gray-900 py-1"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/auth/register"
-              className="inline-flex justify-center items-center px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
-            >
-              Start Free Trial
-            </Link>
+            {registrationEnabled ? (
+              <>
+                <Link
+                  href="/auth/signin"
+                  className="block text-sm font-medium text-gray-700 hover:text-gray-900 py-1"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/register"
+                  className="inline-flex justify-center items-center px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+                >
+                  Start Free Trial
+                </Link>
+              </>
+            ) : (
+              <Link
+                href="#early-access"
+                className="inline-flex justify-center items-center px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+                onClick={() => setMobileOpen(false)}
+              >
+                Get Early Access
+              </Link>
+            )}
           </div>
         </div>
       )}

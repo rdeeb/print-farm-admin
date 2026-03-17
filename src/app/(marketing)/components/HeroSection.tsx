@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+const registrationEnabled = process.env.NEXT_PUBLIC_REGISTRATION_ENABLED === 'true'
+
 export function HeroSection() {
   return (
     <section className="bg-gradient-to-b from-indigo-50 to-white py-20 sm:py-28 px-4">
@@ -24,12 +26,21 @@ export function HeroSection() {
 
         {/* CTA buttons */}
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            href="/auth/register"
-            className="inline-flex items-center px-6 py-3 text-base font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
-          >
-            Start Free Trial — No credit card required
-          </Link>
+          {registrationEnabled ? (
+            <Link
+              href="/auth/register"
+              className="inline-flex items-center px-6 py-3 text-base font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+            >
+              Start Free Trial — No credit card required
+            </Link>
+          ) : (
+            <Link
+              href="#early-access"
+              className="inline-flex items-center px-6 py-3 text-base font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+            >
+              Get Early Access
+            </Link>
+          )}
           <Link
             href="#how-it-works"
             className="inline-flex items-center gap-2 px-6 py-3 text-base font-semibold text-gray-700 bg-white rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
@@ -44,7 +55,7 @@ export function HeroSection() {
 
         {/* Social proof nudge */}
         <p className="mt-4 text-sm text-gray-500">
-          14-day free trial. No credit card. Cancel anytime.
+          {registrationEnabled ? '14-day free trial. No credit card. Cancel anytime.' : 'Be the first to know when we launch.'}
         </p>
 
         {/* Product screenshot placeholder */}

@@ -669,7 +669,7 @@ enum LedgerSource {
 // Waitlist / wishlist registration (pre-launch validation)
 model WishlistRegistration {
   id        String   @id @default(cuid())
-  email     String
+  email     String   @unique
   createdAt DateTime @default(now())
 
   // Q1: How many printers, how do you monitor?
@@ -678,14 +678,35 @@ model WishlistRegistration {
   biggestProblem String? @db.Text
   // Q3: Tools tried + likes/dislikes
   toolsTried String? @db.Text
-  // Q4: Magic wand — one thing to fix
-  magicWandFix String? @db.Text
+  // Q4: What would break if you doubled printers?
+  doublePrintersBreak String? @db.Text
   // Q5: What would it be worth per month?
   worthPerMonth String? @db.Text
-  // Bonus: What would break if you doubled printers?
-  doublePrintersBreak String? @db.Text
+
+  discountCode DiscountCode?
 
   @@map("wishlist_registrations")
+}
+
+model DiscountCode {
+  id                 String    @id @default(cuid())
+  code               String    @unique
+  discountPercent    Int
+  durationMonths     Int?      // null = forever; 12 = first year only
+  maxUses            Int?      // null = unlimited; 1 = single-use
+  usedCount          Int       @default(0)
+  isActive           Boolean   @default(true)
+  expiresAt          DateTime?
+  redeemedAt         DateTime?
+  redeemedByTenantId String?
+  stripeCouponId     String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  wishlistRegistrationId String?               @unique
+  wishlistRegistration   WishlistRegistration? @relation(fields: [wishlistRegistrationId], references: [id], onDelete: SetNull)
+
+  @@map("discount_codes")
 }
 
 // Printer Connectivity

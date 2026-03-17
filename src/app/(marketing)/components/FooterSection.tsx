@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+const registrationEnabled = process.env.NEXT_PUBLIC_REGISTRATION_ENABLED === 'true'
+
 export function FooterSection() {
   const currentYear = new Date().getFullYear()
 
@@ -48,23 +50,27 @@ export function FooterSection() {
                 </Link>
               </li>
               <li>
-                <Link href="#pricing" className="hover:text-white transition-colors">
-                  Pricing
+                <Link href="#early-access" className="hover:text-white transition-colors">
+                  Early Access
                 </Link>
               </li>
-              <li>
-                <Link href="/auth/signin" className="hover:text-white transition-colors">
-                  Sign In
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/auth/register"
-                  className="text-indigo-400 hover:text-indigo-300 transition-colors"
-                >
-                  Start Free Trial
-                </Link>
-              </li>
+              {registrationEnabled && (
+                <>
+                  <li>
+                    <Link href="/auth/signin" className="hover:text-white transition-colors">
+                      Sign In
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/auth/register"
+                      className="text-indigo-400 hover:text-indigo-300 transition-colors"
+                    >
+                      Start Free Trial
+                    </Link>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
 

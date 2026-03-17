@@ -6,7 +6,7 @@ import { HeroSection } from './components/HeroSection'
 import { ProblemSection } from './components/ProblemSection'
 import { FeaturesSection } from './components/FeaturesSection'
 import { HowItWorksSection } from './components/HowItWorksSection'
-import { PricingSection } from './components/PricingSection'
+import { PreRegistrationSection } from './components/PreRegistrationSection'
 import { SocialProofSection } from './components/SocialProofSection'
 import { FaqSection } from './components/FaqSection'
 import { FooterSection } from './components/FooterSection'
@@ -27,7 +27,7 @@ export default async function MarketingPage() {
         <FeaturesSection />
         <HowItWorksSection />
         <SocialProofSection />
-        <PricingSection />
+        <PreRegistrationSection />
         <FaqSection />
       </main>
       <FooterSection />

@@ -37,7 +37,13 @@
       "Bash(pnpm jest:*)",
       "Bash(pnpm run:*)",
       "Bash(npx tsc:*)",
-      "Bash(find /c/Users/rdeeb/Development/3d-farm-admin/node_modules/stripe -name \"*.d.ts\" 2>/dev/null | head -10)"
+      "Bash(find /c/Users/rdeeb/Development/3d-farm-admin/node_modules/stripe -name \"*.d.ts\" 2>/dev/null | head -10)",
+      "Bash(cd C:/Users/rdeeb/Development/3d-farm-admin && pnpm test -- --testPathPattern=telemetry-bus --no-coverage 2>&1)",
+      "Bash(cd C:/Users/rdeeb/Development/3d-farm-admin && pnpm test --testPathPattern=telemetry-bus --no-coverage 2>&1)",
+      "Bash(cd C:/Users/rdeeb/Development/3d-farm-admin && pnpm type-check 2>&1 | tail -20)",
+      "Bash(cd C:/Users/rdeeb/Development/3d-farm-admin && pnpm type-check 2>&1)",
+      "Bash(cd C:/Users/rdeeb/Development/3d-farm-admin && pnpm test --testPathPattern=\"connector-auth\" 2>&1)",
+      "Bash(rtk git:*)"
     ]
   }
 }

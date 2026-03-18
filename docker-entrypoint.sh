@@ -10,4 +10,4 @@ if [ "$PRISMA_RUN_SEED" = "true" ]; then
 fi
 
 echo "→ Starting application..."
-exec "$@"
+exec node_modules/.bin/next start

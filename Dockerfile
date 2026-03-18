@@ -50,6 +50,7 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Entrypoint runs migrations (and optionally seeds) before handing off to CMD.
+# Entrypoint runs migrations (and optionally seeds) then starts Next.js directly.
+# No CMD — the entrypoint owns the full startup sequence so Dokku cannot
+# override it with its default pnpm/npm start behaviour.
 ENTRYPOINT ["./docker-entrypoint.sh"]
-CMD ["node_modules/.bin/next", "start"]

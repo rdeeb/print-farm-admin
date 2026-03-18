@@ -1,6 +1,19 @@
 import { withAuth } from 'next-auth/middleware'
 import { NextResponse } from 'next/server'
 
+// API routes that are publicly accessible without a session
+const PUBLIC_API_PREFIXES = [
+  '/api/auth/',
+  '/api/stripe/webhook',
+  '/api/wishlist/',
+  '/api/cron/',
+  '/api/health',
+]
+
+function isPublicApi(pathname: string): boolean {
+  return PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+}
+
 // Routes that must never be blocked by subscription checks
 const SUBSCRIPTION_EXEMPT_PREFIXES = [
   '/subscribe',
@@ -20,7 +33,7 @@ export default withAuth(
 
     // Protect API routes
     if (pathname.startsWith('/api/')) {
-      if (pathname.startsWith('/api/auth/') || pathname.startsWith('/api/stripe/webhook')) {
+      if (isPublicApi(pathname)) {
         return NextResponse.next()
       }
 
@@ -122,8 +135,10 @@ export default withAuth(
           pathname.startsWith('/auth/') ||
           pathname === '/' ||
           pathname.startsWith('/_next') ||
-          pathname.startsWith('/api/auth/') ||
-          pathname.startsWith('/subscribe')
+          pathname.startsWith('/subscribe') ||
+          pathname.startsWith('/terms') ||
+          pathname.startsWith('/privacy') ||
+          isPublicApi(pathname)
         ) {
           return true
         }

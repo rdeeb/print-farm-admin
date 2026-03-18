@@ -1,52 +1,27 @@
 {
-  "name": "3d-farm-admin",
-  "description": "Comprehensive 3D printing farm management system",
-  "keywords": ["3d-printing", "farm-management", "nextjs", "prisma", "postgres"],
-  "website": "https://github.com/your-repo/3d-farm-admin",
-  "repository": "https://github.com/your-repo/3d-farm-admin",
-  "scripts": {
-    "dokku": {
-      "predeploy": "pnpm dlx prisma migrate deploy && pnpm dlx prisma db seed"
-    }
-  },
-  "buildpacks": [
-    {
-      "url": "heroku/nodejs"
-    }
-  ],
+  "name": "printfleet",
+  "description": "PrintFleet — print farm management system",
   "env": {
     "NODE_ENV": "production",
     "NEXTAUTH_URL": {
-      "description": "The URL of your application",
+      "description": "Public URL of the application (e.g. https://printfleet.app)",
       "required": true
     },
     "NEXTAUTH_SECRET": {
       "description": "Secret key for NextAuth.js",
-      "generator": "secret",
       "required": true
     },
     "JWT_SECRET": {
       "description": "Secret key for JWT tokens",
-      "generator": "secret",
       "required": true
     },
     "DATABASE_URL": {
-      "description": "PostgreSQL database URL",
+      "description": "PostgreSQL connection string (set automatically by dokku-postgres plugin)",
       "required": true
     },
     "REDIS_URL": {
-      "description": "Redis URL for caching and SSE",
+      "description": "Redis connection string (set automatically by dokku-redis plugin)",
       "required": false
-    }
-  },
-  "addons": [
-    "heroku-postgresql:mini",
-    "heroku-redis:mini"
-  ],
-  "formation": {
-    "web": {
-      "quantity": 1,
-      "size": "standard-1x"
     }
   }
 }

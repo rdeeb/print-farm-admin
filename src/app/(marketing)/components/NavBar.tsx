@@ -29,7 +29,7 @@ export function NavBar() {
                 />
               </svg>
             </div>
-            <span className="text-lg font-bold text-gray-900">3D Farm Admin</span>
+            <span className="text-lg font-bold text-gray-900">PrintFleet</span>
           </Link>
 
           {/* Desktop nav links */}

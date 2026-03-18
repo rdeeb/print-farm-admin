@@ -96,7 +96,7 @@ export function PreRegistrationSection() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-3">You&apos;re on the list!</h2>
           <p className="text-gray-600 mb-6">
-            We&apos;ll reach out as soon as we launch. Thanks for your interest in 3D Farm Admin.
+            We&apos;ll reach out as soon as we launch. Thanks for your interest in PrintFleet.
           </p>
           {discountCode && (
             <div className="bg-white border border-green-200 rounded-2xl p-6 shadow-sm">
@@ -140,7 +140,7 @@ export function PreRegistrationSection() {
             Be the first to know when we launch
           </h2>
           <p className="text-lg text-gray-500">
-            Join the waitlist and we&apos;ll notify you the moment 3D Farm Admin is ready.
+            Join the waitlist and we&apos;ll notify you the moment PrintFleet is ready.
           </p>
         </div>
 

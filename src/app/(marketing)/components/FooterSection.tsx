@@ -27,7 +27,7 @@ export function FooterSection() {
                   />
                 </svg>
               </div>
-              <span className="text-white font-bold text-lg">3D Farm Admin</span>
+              <span className="text-white font-bold text-lg">PrintFleet</span>
             </Link>
             <p className="text-sm leading-relaxed max-w-xs">
               The first order management system built for 3D print farms that shows you your actual cost per
@@ -94,7 +94,7 @@ export function FooterSection() {
 
         <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm">
-            &copy; {currentYear} 3D Farm Admin. All rights reserved.
+            &copy; {currentYear} PrintFleet. All rights reserved.
           </p>
           <p className="text-xs text-gray-600">
             Built for print farm operators, by people who get it.

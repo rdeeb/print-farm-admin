@@ -20,7 +20,7 @@ export function HeroSection() {
 
         {/* Sub-headline */}
         <p className="mt-6 text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-          3D Farm Admin is the first order management system built for 3D print farms that shows you your
+          PrintFleet is the first order management system built for 3D print farms that shows you your
           actual cost per job — before you quote and after you ship.
         </p>
 

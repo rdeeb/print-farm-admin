@@ -24,7 +24,7 @@ const faqs = [
       'Absolutely. You own your data. Shop and Farm plans include CSV and JSON data export for all orders, jobs, clients, and cost records. Solo plan includes CSV export for orders.',
   },
   {
-    question: 'Does 3D Farm Admin support multiple users?',
+    question: 'Does PrintFleet support multiple users?',
     answer:
       'Yes. The Shop plan supports up to 5 team members with role-based access (Admin, Operator, Viewer). The Farm plan supports unlimited team members. The Solo plan is designed for a single user.',
   },
@@ -99,8 +99,8 @@ export function FaqSection() {
           <p className="text-gray-700 mb-2 font-medium">Still have questions?</p>
           <p className="text-gray-500 text-sm">
             Email us at{' '}
-            <a href="mailto:hello@3dfarmadmin.com" className="text-indigo-600 hover:underline">
-              hello@3dfarmadmin.com
+            <a href="mailto:hello@printfleet.app" className="text-indigo-600 hover:underline">
+              hello@printfleet.app
             </a>
             {' '}— we reply within one business day.
           </p>

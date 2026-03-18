@@ -73,7 +73,7 @@ export function ProblemSection() {
           <p className="text-gray-400 text-lg">
             There&apos;s a better way.{' '}
             <span className="text-indigo-400 font-semibold">
-              3D Farm Admin was built to fix exactly this.
+              PrintFleet was built to fix exactly this.
             </span>
           </p>
         </div>

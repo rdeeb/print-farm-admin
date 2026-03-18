@@ -1,7 +1,7 @@
 const testimonials = [
   {
     quote:
-      "Before 3D Farm Admin, I was losing money on rush orders and didn't know it. Now I quote with real numbers and my margins are up 30%.",
+      "Before PrintFleet, I was losing money on rush orders and didn't know it. Now I quote with real numbers and my margins are up 30%.",
     name: 'Marcus T.',
     title: 'Owner',
     company: 'LayerUp Studios',
@@ -156,7 +156,7 @@ export function SocialProofSection() {
                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700 w-1/2">Feature</th>
                 <th className="px-6 py-4 text-center text-sm font-semibold text-indigo-700">
                   <div className="flex flex-col items-center gap-1">
-                    <span>3D Farm Admin</span>
+                    <span>PrintFleet</span>
                     <span className="text-xs text-indigo-400 font-normal">purpose-built</span>
                   </div>
                 </th>

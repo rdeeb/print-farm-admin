@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { NextResponse } from 'next/server'
 import { getStripe, getTierFromPriceId } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'

@@ -3,6 +3,7 @@ import { getStripe, getTierFromPriceId } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { Prisma, PlanTier } from '@prisma/client'
 import Stripe from 'stripe'
+import { trackEvent, pushCurrentSnapshot } from '@/lib/sa-connector'
 
 export async function POST(request: Request) {
   const body = await request.text()
@@ -63,6 +64,9 @@ export async function POST(request: Request) {
             cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
           },
         })
+
+        void trackEvent({ event_type: 'paid_converted', occurred_at: new Date(), external_entity_id: tenantId, metadata: { tier } })
+        void pushCurrentSnapshot()
       } catch (err: unknown) {
         if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
           console.error('checkout.session.completed: subscription record not found', err)
@@ -120,6 +124,8 @@ export async function POST(request: Request) {
             data: updateData,
           })
         }
+
+        void pushCurrentSnapshot()
       } catch (err: unknown) {
         if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
           console.error('customer.subscription.updated: subscription record not found', err)
@@ -157,6 +163,9 @@ export async function POST(request: Request) {
             data: updateData,
           })
         }
+
+        void trackEvent({ event_type: 'churned', occurred_at: new Date(), external_entity_id: tenantId ?? sub.id })
+        void pushCurrentSnapshot()
       } catch (err: unknown) {
         if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
           console.error('customer.subscription.deleted: subscription record not found', err)

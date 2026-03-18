@@ -43,7 +43,13 @@
       "Bash(cd C:/Users/rdeeb/Development/3d-farm-admin && pnpm type-check 2>&1 | tail -20)",
       "Bash(cd C:/Users/rdeeb/Development/3d-farm-admin && pnpm type-check 2>&1)",
       "Bash(cd C:/Users/rdeeb/Development/3d-farm-admin && pnpm test --testPathPattern=\"connector-auth\" 2>&1)",
-      "Bash(rtk git:*)"
+      "Bash(rtk git:*)",
+      "Bash(git commit:*)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:registry.npmjs.org)",
+      "Bash(rtk ls:*)",
+      "Bash(rtk tsc:*)",
+      "Bash(rtk grep:*)"
     ]
   }
 }

@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getStripe, PLAN_CONFIG } from '@/lib/stripe'
 import { apiError, apiSuccess } from '@/lib/api-response'
+import { trackEvent } from '@/lib/sa-connector'
 import { z } from 'zod'
 
 const checkoutSchema = z.object({
@@ -124,6 +125,13 @@ export async function POST(request: Request) {
       metadata: {
         tenantId: session.user.tenantId,
       },
+    })
+
+    void trackEvent({
+      event_type: 'cta_clicked',
+      occurred_at: new Date(),
+      external_entity_id: session.user.tenantId,
+      metadata: { tier, interval, discount_applied: !!stripeCouponId },
     })
 
     return apiSuccess({ url: checkoutSession.url })

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { apiError, apiSuccess } from '@/lib/api-response'
+import { trackEvent } from '@/lib/sa-connector'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -88,6 +89,13 @@ export async function POST(request: NextRequest) {
       })
       discountCode = code
     }
+
+    void trackEvent({
+      event_type: 'flow_started',
+      occurred_at: new Date(),
+      external_entity_id: trimmedEmail,
+      metadata: { answered_survey: answeredSurvey, discount_code_issued: discountCode !== null },
+    })
 
     return apiSuccess(
       {

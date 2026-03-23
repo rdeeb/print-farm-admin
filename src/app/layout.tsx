@@ -5,6 +5,8 @@ import './globals.css'
 import { SessionProvider } from '@/components/providers/SessionProvider'
 import { SettingsProvider } from '@/components/providers/SettingsProvider'
 import { Toaster } from '@/components/ui/toaster'
+import { CookieConsent } from '@/components/CookieConsent'
+import { GoogleAnalytics } from '@/components/GoogleAnalytics'
 const OfflineIndicator = dynamic(
   () => import('@/components/OfflineIndicator'),
   { ssr: false }
@@ -63,10 +65,12 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <OfflineIndicator />
+        <GoogleAnalytics />
         <SessionProvider>
           <SettingsProvider>
             {children}
             <Toaster />
+            <CookieConsent />
           </SettingsProvider>
         </SessionProvider>
       </body>
